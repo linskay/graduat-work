@@ -7,7 +7,7 @@ import java.util.List;
 
 @Data
 @Schema(description = "DTO для представления списка комментариев")
-public class CommentsDTO {
+public class Comments {
 
     @Schema(description = "Общее количество комментариев", example = "5")
     private Integer count;

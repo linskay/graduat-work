@@ -10,7 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.skypro.homework.dto.Comment;
-import ru.skypro.homework.dto.CommentsDTO;
+import ru.skypro.homework.dto.Comments;
 import ru.skypro.homework.dto.CreateOrUpdateComment;
 import ru.skypro.homework.service.CommentService;
 
@@ -35,16 +35,16 @@ public class CommentsController {
                             description = "OK",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = CommentsDTO.class)
+                                    schema = @Schema(implementation = Comments.class)
                             )
                     ),
                     @ApiResponse(responseCode = "401", description = "Unauthorized"),
                     @ApiResponse(responseCode = "404", description = "Not found")
             }
     )
-    public CommentsDTO getComments(@PathVariable Integer id) {
+    public Comments getComments(@PathVariable Integer id) {
         List<Comment> comments = commentService.getComments(id);
-        CommentsDTO response = new CommentsDTO();
+        Comments response = new Comments();
         response.setCount(comments.size());
         response.setResults(comments);
         return response;
