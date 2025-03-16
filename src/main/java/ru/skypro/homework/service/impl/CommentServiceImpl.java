@@ -4,8 +4,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.skypro.homework.dto.CommentDTO;
 import ru.skypro.homework.dto.CreateOrUpdateCommentDTO;
+import ru.skypro.homework.mapper.CommentMapper;
+import ru.skypro.homework.model.Ad;
 import ru.skypro.homework.model.Comment;
+import ru.skypro.homework.model.User;
+import ru.skypro.homework.repository.AdRepository;
 import ru.skypro.homework.repository.CommentRepository;
+import ru.skypro.homework.repository.UserRepository;
 import ru.skypro.homework.service.CommentService;
 
 import java.time.Instant;
@@ -17,64 +22,66 @@ import java.util.stream.Collectors;
 public class CommentServiceImpl implements CommentService {
 
     private final CommentRepository commentRepository;
+    private final UserRepository userRepository;
+    private final AdRepository adRepository;
+    private final CommentMapper commentMapper;
 
     @Override
     public List<CommentDTO> getComments(Integer adId) {
-        return commentRepository.findByAdId(adId).stream()
-                .map(this::toCommentDTO)
-                .collect(Collectors.toList());
+        return commentMapper.commentsToCommentDTOs(commentRepository.findByAdId(adId));
     }
 
     @Override
-    public CommentDTO addComment(Integer adId, CreateOrUpdateCommentDTO comment) {
+    public CommentDTO addComment(Integer adId, CreateOrUpdateCommentDTO commentDTO) {
+        User currentUser = getCurrentUser();
 
-        Comment newComment = new Comment();
-        newComment.setText(comment.getText());
-        newComment.setCreatedAt(Instant.now());
-        //toDO id автора и объявление (ad), вывести в комментарий
+        Ad ad = adRepository.findById(adId)
+                .orElseThrow(() -> new RuntimeException("Объявление не найдено"));
 
-        Comment savedComment = commentRepository.save(newComment);
+        Comment comment = commentMapper.createOrUpdateCommentDTOToComment(commentDTO);
+        comment.setAuthor(currentUser);
+        comment.setAd(ad);
+        comment.setCreatedAt(Instant.now());
 
-        return toCommentDTO(savedComment);
+        Comment savedComment = commentRepository.save(comment);
+
+        return commentMapper.commentToCommentDTO(savedComment);
     }
 
     @Override
     public void deleteComment(Integer adId, Integer commentId) {
-        commentRepository.deleteById(commentId);
-    }
-
-    @Override
-    public CommentDTO updateComment(Integer adId, Integer commentId, CreateOrUpdateCommentDTO updatedComment) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new RuntimeException("Комментарий не найден"));
 
-        comment.setText(updatedComment.getText());
+        if (!comment.getAd().getId().equals(adId)) {
+            throw new RuntimeException("Комментарий не относится к указанному объявлению");
+        }
 
-        Comment updated = commentRepository.save(comment);
-
-        return toCommentDTO(updated);
+        commentRepository.delete(comment);
     }
 
-    private CommentDTO toCommentDTO(Comment comment) {
-        CommentDTO dto = new CommentDTO();
-        dto.setPk(comment.getId());
-        dto.setText(comment.getText());
+    @Override
+    public CommentDTO updateComment(Integer adId, Integer commentId, CreateOrUpdateCommentDTO updatedCommentDTO) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new RuntimeException("Комментарий не найден"));
 
-        if (comment.getAuthor() != null) {
-            dto.setAuthor(comment.getAuthor().getId());
-            dto.setAuthorUsername(comment.getAuthor().getUsername());
-            dto.setAuthorImage(comment.getAuthor().getImageUrl());
-        } else {
-            dto.setAuthor(null);
-            dto.setAuthorUsername("Unknown");
-            dto.setAuthorImage(null);
+        if (!comment.getAd().getId().equals(adId)) {
+            throw new RuntimeException("Комментарий не относится к указанному объявлению");
         }
 
-        if (comment.getCreatedAt() != null) {
-            dto.setCreatedAt(comment.getCreatedAt().toEpochMilli());
-        } else {
-            dto.setCreatedAt(0L);
-        }
-        return dto;
+        Comment updatedComment = commentMapper.createOrUpdateCommentDTOToComment(updatedCommentDTO);
+        updatedComment.setId(comment.getId());
+        updatedComment.setAuthor(comment.getAuthor());
+        updatedComment.setAd(comment.getAd());
+        updatedComment.setCreatedAt(comment.getCreatedAt());
+
+        Comment savedComment = commentRepository.save(updatedComment);
+
+        return commentMapper.commentToCommentDTO(savedComment);
+    }
+
+    private User getCurrentUser() {
+        // toDo: Логика получения текущего авторизованного пользователя
+        return userRepository.findById(1L).orElseThrow(() -> new RuntimeException("Пользователь не авторизован"));
     }
 }

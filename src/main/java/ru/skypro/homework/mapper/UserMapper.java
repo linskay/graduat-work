@@ -14,7 +14,6 @@ public interface UserMapper {
 
     UserMapper INSTANCE = Mappers.getMapper(UserMapper.class);
 
-    // Преобразование User в UserDTO
     @Mapping(source = "id", target = "id")
     @Mapping(source = "firstName", target = "firstName")
     @Mapping(source = "lastName", target = "lastName")
@@ -23,7 +22,6 @@ public interface UserMapper {
     @Mapping(source = "imageUrl", target = "imageUrl")
     UserDTO toUserDTO(User user);
 
-    // Преобразование UserDTO в User
     @Mapping(source = "firstName", target = "firstName")
     @Mapping(source = "lastName", target = "lastName")
     @Mapping(source = "email", target = "email")
@@ -31,12 +29,10 @@ public interface UserMapper {
     @Mapping(source = "imageUrl", target = "imageUrl")
     User toUser(UserDTO userDTO);
 
-    // Преобразование Login в User (для авторизации)
     @Mapping(source = "username", target = "username")
     @Mapping(source = "password", target = "password")
     User toUser(Login login);
 
-    // Преобразование Register в User (для регистрации)
     @Mapping(source = "username", target = "username")
     @Mapping(source = "password", target = "password")
     @Mapping(source = "firstName", target = "firstName")
@@ -45,7 +41,6 @@ public interface UserMapper {
     @Mapping(source = "role", target = "role")
     User toUser(Register register);
 
-    // Преобразование UpdateUser в User (для обновления информации)
     @Mapping(source = "firstName", target = "firstName")
     @Mapping(source = "lastName", target = "lastName")
     @Mapping(source = "phone", target = "phone")
