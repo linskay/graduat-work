@@ -1,13 +1,19 @@
 package ru.skypro.homework.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import ru.skypro.homework.dto.NewPassword;
 import ru.skypro.homework.dto.UpdateUser;
-import ru.skypro.homework.dto.User;
+import ru.skypro.homework.exception.UserNotAuthorizedException;
+import ru.skypro.homework.exception.UserNotFoundException;
 import ru.skypro.homework.mapper.UserMapper;
+import ru.skypro.homework.model.User;
 import ru.skypro.homework.repository.UserRepository;
 import ru.skypro.homework.service.UserService;
 
@@ -18,6 +24,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 
     @Override
     public Long updatePassword(NewPassword newPassword) {
@@ -37,8 +44,20 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getCurrentUser() {
-        ru.skypro.homework.model.User user = getCurrentUserFromContext();
-        return userMapper.toUserDTO(user);
+        // Получаем текущий контекст безопасности
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        // Проверяем, что пользователь аутентифицирован
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new UserNotAuthorizedException("Пользователь не авторизован");
+        }
+
+        // Получаем имя пользователя из Principal
+        String username = authentication.getName();
+
+        // Ищем пользователя в базе данных
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("Пользователь не найден в базе данных"));
     }
 
     @Override
@@ -60,7 +79,23 @@ public class UserServiceImpl implements UserService {
 
     // Получение текущего пользователя (заглушка)
     private ru.skypro.homework.model.User getCurrentUserFromContext() {
-        //toDo Логика получения текущего пользователя из контекста безопасности
-        return userRepository.findById(1L).orElseThrow(); // Заглушка
+        // Получаем текущий контекст безопасности
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        // Проверяем, что пользователь аутентифицирован
+        if (authentication == null || !authentication.isAuthenticated()) {
+            logger.error("Пользователь не авторизован");
+            throw new UserNotAuthorizedException("Пользователь не авторизован");
+        }
+
+        // Получаем имя пользователя из Principal
+        String username = authentication.getName();
+
+        // Ищем пользователя в базе данных
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> {
+                    logger.error("Пользователь не найден в базе данных: {}", username);
+                    return new UserNotFoundException("Пользователь не найден в базе данных");
+                });
     }
 }

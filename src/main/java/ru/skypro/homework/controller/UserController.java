@@ -59,7 +59,7 @@ public class UserController {
                     )
             }
     )
-    public User getUser() {
+    public ru.skypro.homework.model.User getUser() {
         return userService.getCurrentUser();
     }
 
