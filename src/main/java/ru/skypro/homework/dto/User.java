@@ -7,7 +7,7 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 @Schema(description = "DTO для представления информации о пользователе")
-public class UserDTO {
+public class User {
 
     @Schema(description = "Уникальный идентификатор пользователя", example = "1")
     private Long id;

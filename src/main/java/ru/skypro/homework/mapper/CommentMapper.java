@@ -4,9 +4,8 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
-import ru.skypro.homework.dto.CommentDTO;
-import ru.skypro.homework.dto.CreateOrUpdateCommentDTO;
-import ru.skypro.homework.model.Comment;
+import ru.skypro.homework.dto.Comment;
+import ru.skypro.homework.dto.CreateOrUpdateComment;
 
 import java.time.Instant;
 import java.util.List;
@@ -26,13 +25,13 @@ public interface CommentMapper {
     @Mapping(source = "author.firstName", target = "authorUsername")
     @Mapping(source = "author.imageUrl", target = "authorImage")
     @Mapping(source = "createdAt", target = "createdAt", qualifiedByName = "mapInstantToEpochMillis")
-    CommentDTO commentToCommentDTO(Comment comment);
+    Comment commentToCommentDTO(ru.skypro.homework.model.Comment comment);
 
-    List<CommentDTO> commentsToCommentDTOs(List<Comment> comments);
+    List<Comment> commentsToCommentDTOs(List<ru.skypro.homework.model.Comment> comments);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "author", ignore = true)
     @Mapping(target = "ad", ignore = true)
-    Comment createOrUpdateCommentDTOToComment(CreateOrUpdateCommentDTO dto);
+    ru.skypro.homework.model.Comment createOrUpdateCommentDTOToComment(CreateOrUpdateComment dto);
 }

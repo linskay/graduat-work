@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @Schema(description = "DTO для представления комментария")
-public class CommentDTO {
+public class Comment {
 
     @Schema(description = "Уникальный идентификатор комментария", example = "123")
     private Integer pk;

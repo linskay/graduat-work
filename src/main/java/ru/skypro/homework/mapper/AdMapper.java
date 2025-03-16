@@ -5,10 +5,9 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
-import ru.skypro.homework.dto.AdDTO;
-import ru.skypro.homework.dto.CreateOrUpdateAdDTO;
-import ru.skypro.homework.dto.ExtendedAdDTO;
-import ru.skypro.homework.model.Ad;
+import ru.skypro.homework.dto.Ad;
+import ru.skypro.homework.dto.CreateOrUpdateAd;
+import ru.skypro.homework.dto.ExtendedAd;
 import ru.skypro.homework.model.User;
 
 import java.util.List;
@@ -26,15 +25,15 @@ public interface AdMapper {
     @Named("adToAdDTO")
     @Mapping(source = "id", target = "pk")
     @Mapping(source = "author", target = "author", qualifiedByName = "mapUserToId")
-    AdDTO adToAdDTO(Ad ad);
+    Ad adToAdDTO(ru.skypro.homework.model.Ad ad);
 
     @IterableMapping(qualifiedByName = "adToAdDTO")
-    List<AdDTO> adsToAdDTOs(List<Ad> ads);
+    List<Ad> adsToAdDTOs(List<ru.skypro.homework.model.Ad> ads);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "image", ignore = true)
     @Mapping(target = "author", ignore = true)
-    Ad createOrUpdateAdDTOToAd(CreateOrUpdateAdDTO dto);
+    ru.skypro.homework.model.Ad createOrUpdateAdDTOToAd(CreateOrUpdateAd dto);
 
     @Mapping(source = "id", target = "pk")
     @Mapping(source = "author", target = "author", qualifiedByName = "mapUserToId")
@@ -45,5 +44,5 @@ public interface AdMapper {
     @Mapping(source = "price", target = "price")
     @Mapping(source = "description", target = "description")
     @Mapping(source = "title", target = "title")
-    ExtendedAdDTO adToExtendedAdDTO(Ad ad);
+    ExtendedAd adToExtendedAdDTO(ru.skypro.homework.model.Ad ad);
 }
