@@ -40,15 +40,12 @@ public class AdServiceImpl implements AdService {
 
     @Override
     public Ad addAd(CreateOrUpdateAd properties, MultipartFile image) {
-        // Получаем текущего пользователя
         User currentUser = userService.getCurrentUser();
         logger.info("Adding new ad by user: {}", currentUser.getUsername());
 
-        // Создаем объявление
         ru.skypro.homework.model.Ad ad = adMapper.createOrUpdateAdDTOToAd(properties);
         ad.setAuthor(currentUser);
 
-        // Сохраняем изображение
         try {
             ad.setImage(Arrays.toString(image.getBytes()));
         } catch (IOException e) {
@@ -56,7 +53,6 @@ public class AdServiceImpl implements AdService {
             throw new ImageUploadException("Ошибка при загрузке изображения", e);
         }
 
-        // Сохраняем объявление в базе данных
         ru.skypro.homework.model.Ad savedAd = adRepository.save(ad);
         logger.info("Ad added successfully with id: {}", savedAd.getId());
 
@@ -83,16 +79,13 @@ public class AdServiceImpl implements AdService {
                     return new AdNotFoundException("Объявление не найдено");
                 });
 
-        // Получаем текущего пользователя
         User currentUser = userService.getCurrentUser();
 
-        // Проверяем, является ли пользователь автором объявления или админом
         if (!ad.getAuthor().equals(currentUser) && !isAdmin(currentUser)) {
             logger.error("Unauthorized access to delete ad by user: {}", currentUser.getUsername());
             throw new UnauthorizedAccessException("У вас нет прав для удаления этого объявления");
         }
 
-        // Удаляем объявление
         adRepository.delete(ad);
         logger.info("Ad removed successfully with id: {}", id);
     }
@@ -106,16 +99,13 @@ public class AdServiceImpl implements AdService {
                     return new AdNotFoundException("Объявление не найдено");
                 });
 
-        // Получаем текущего пользователя
         User currentUser = userService.getCurrentUser();
 
-        // Проверяем, является ли пользователь автором объявления или админом
         if (!ad.getAuthor().equals(currentUser) && !isAdmin(currentUser)) {
             logger.error("Unauthorized access to update ad by user: {}", currentUser.getUsername());
             throw new UnauthorizedAccessException("У вас нет прав для редактирования этого объявления");
         }
 
-        // Обновляем объявление
         ru.skypro.homework.model.Ad updatedEntity = adMapper.createOrUpdateAdDTOToAd(updatedAd);
         updatedEntity.setId(ad.getId());
         updatedEntity.setAuthor(ad.getAuthor());
@@ -129,11 +119,9 @@ public class AdServiceImpl implements AdService {
 
     @Override
     public List<Ad> getAdsMe() {
-        // Получаем текущего пользователя
         User currentUser = userService.getCurrentUser();
         logger.info("Fetching ads for user: {}", currentUser.getUsername());
 
-        // Возвращаем объявления текущего пользователя
         return adMapper.adsToAdDTOs(adRepository.findByAuthor(currentUser));
     }
 
@@ -146,16 +134,13 @@ public class AdServiceImpl implements AdService {
                     return new AdNotFoundException("Объявление не найдено");
                 });
 
-        // Получаем текущего пользователя
         User currentUser = userService.getCurrentUser();
 
-        // Проверяем, является ли пользователь автором объявления или админом
         if (!ad.getAuthor().equals(currentUser) && !isAdmin(currentUser)) {
             logger.error("Unauthorized access to update image by user: {}", currentUser.getUsername());
             throw new UnauthorizedAccessException("У вас нет прав для обновления изображения этого объявления");
         }
 
-        // Обновляем изображение
         try {
             byte[] imageBytes = image.getBytes();
             ad.setImage(Arrays.toString(imageBytes));

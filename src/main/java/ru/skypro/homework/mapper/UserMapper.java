@@ -2,6 +2,7 @@ package ru.skypro.homework.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.factory.Mappers;
 import ru.skypro.homework.dto.Login;
 import ru.skypro.homework.dto.Register;
@@ -40,8 +41,14 @@ public interface UserMapper {
     @Mapping(source = "role", target = "role")
     ru.skypro.homework.model.User toUser(Register register);
 
+    /**
+     * Обновляет существующий объект User на основе DTO.
+     *
+     * @param updateUser DTO с новыми данными
+     * @param user       существующий объект User
+     */
     @Mapping(source = "firstName", target = "firstName")
     @Mapping(source = "lastName", target = "lastName")
     @Mapping(source = "phone", target = "phone")
-    ru.skypro.homework.model.User toUser(UpdateUser updateUser);
+    void updateUserFromDTO(UpdateUser updateUser, @MappingTarget ru.skypro.homework.model.User user);
 }

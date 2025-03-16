@@ -21,80 +21,80 @@ import ru.skypro.homework.service.UserService;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
+    private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
+
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
-    private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 
     @Override
     public Long updatePassword(NewPassword newPassword) {
-        ru.skypro.homework.model.User user = getCurrentUserFromContext();
+        logger.info("Updating password for current user");
 
-        // Проверяем, что текущий пароль верный
-        if (!passwordEncoder.matches(newPassword.getCurrentPassword(), user.getPassword())) {
+        User currentUser = getCurrentUserFromContext();
+
+        if (!passwordEncoder.matches(newPassword.getCurrentPassword(), currentUser.getPassword())) {
+            logger.error("Current password is incorrect for user: {}", currentUser.getUsername());
             throw new IllegalArgumentException("Текущий пароль неверный");
         }
 
-        // Шифруем новый пароль и сохраняем
-        user.setPassword(passwordEncoder.encode(newPassword.getNewPassword()));
-        userRepository.save(user);
+        currentUser.setPassword(passwordEncoder.encode(newPassword.getNewPassword()));
+        userRepository.save(currentUser);
+        logger.info("Password updated successfully for user: {}", currentUser.getUsername());
 
-        return user.getId();
+        return currentUser.getId();
     }
 
     @Override
     public User getCurrentUser() {
-        // Получаем текущий контекст безопасности
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        // Проверяем, что пользователь аутентифицирован
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new UserNotAuthorizedException("Пользователь не авторизован");
-        }
-
-        // Получаем имя пользователя из Principal
-        String username = authentication.getName();
-
-        // Ищем пользователя в базе данных
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new UserNotFoundException("Пользователь не найден в базе данных"));
+        logger.info("Fetching current user");
+        return getCurrentUserFromContext();
     }
 
     @Override
     public UpdateUser updateUser(UpdateUser updateUser) {
-        ru.skypro.homework.model.User user = getCurrentUserFromContext();
+        logger.info("Updating user details");
 
-        userMapper.toUser(updateUser);
-        userRepository.save(user);
+        User currentUser = getCurrentUserFromContext();
+
+        userMapper.updateUserFromDTO(updateUser, currentUser);
+        userRepository.save(currentUser);
+        logger.info("User details updated successfully for user: {}", currentUser.getUsername());
 
         return updateUser;
     }
 
     @Override
     public void updateUserImage(MultipartFile image) {
-        ru.skypro.homework.model.User user = getCurrentUserFromContext();
-        user.setImageUrl("/images/new-avatar.jpg");
-        userRepository.save(user);
+        logger.info("Updating user image");
+
+        User currentUser = getCurrentUserFromContext();
+
+        currentUser.setImageUrl("/images/new-avatar.jpg");
+        userRepository.save(currentUser);
+        logger.info("User image updated successfully for user: {}", currentUser.getUsername());
     }
 
-    // Получение текущего пользователя (заглушка)
-    private ru.skypro.homework.model.User getCurrentUserFromContext() {
-        // Получаем текущий контекст безопасности
+    /**
+     * Получает текущего аутентифицированного пользователя из контекста безопасности.
+     *
+     * @return текущий пользователь
+     * @throws UserNotAuthorizedException если пользователь не авторизован
+     * @throws UserNotFoundException      если пользователь не найден в базе данных
+     */
+    private User getCurrentUserFromContext() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        // Проверяем, что пользователь аутентифицирован
         if (authentication == null || !authentication.isAuthenticated()) {
-            logger.error("Пользователь не авторизован");
+            logger.error("User not authorized");
             throw new UserNotAuthorizedException("Пользователь не авторизован");
         }
 
-        // Получаем имя пользователя из Principal
         String username = authentication.getName();
 
-        // Ищем пользователя в базе данных
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> {
-                    logger.error("Пользователь не найден в базе данных: {}", username);
+                    logger.error("User not found in database: {}", username);
                     return new UserNotFoundException("Пользователь не найден в базе данных");
                 });
     }
