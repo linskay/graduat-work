@@ -1,17 +1,13 @@
 package ru.skypro.homework.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
-@Schema(description = "DTO для регистрации нового пользователя")
-public class Register {
-
-    @Schema(description = "Имя пользователя (логин)", example = "user123")
-    private String username;
-
-    @Schema(description = "Пароль пользователя", example = "password123")
-    private String password;
+@AllArgsConstructor
+@Schema(description = "DTO для обновления информации о пользователе")
+public class UpdateUser {
 
     @Schema(description = "Имя пользователя", example = "Иван")
     private String firstName;
@@ -21,7 +17,4 @@ public class Register {
 
     @Schema(description = "Телефон пользователя", example = "+79991234567")
     private String phone;
-
-    @Schema(description = "Роль пользователя", example = "USER")
-    private Role role;
 }
