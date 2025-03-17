@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import ru.skypro.homework.dto.NewPassword;
 import ru.skypro.homework.dto.UpdateUser;
-import ru.skypro.homework.exception.UserNotAuthorizedException;
 import ru.skypro.homework.exception.UserNotFoundException;
 import ru.skypro.homework.mapper.UserMapper;
 import ru.skypro.homework.model.User;
@@ -28,74 +27,79 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    public Long updatePassword(NewPassword newPassword) {
+    public void updatePassword(NewPassword newPassword) {
         logger.info("Updating password for current user");
 
-        User currentUser = getCurrentUserFromContext();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
 
-        if (!passwordEncoder.matches(newPassword.getCurrentPassword(), currentUser.getPassword())) {
-            logger.error("Current password is incorrect for user: {}", currentUser.getUsername());
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("Пользователь не найден"));
+
+        if (!passwordEncoder.matches(newPassword.getCurrentPassword(), user.getPassword())) {
+            logger.error("Current password is incorrect for user: {}", username);
             throw new IllegalArgumentException("Текущий пароль неверный");
         }
 
-        currentUser.setPassword(passwordEncoder.encode(newPassword.getNewPassword()));
-        userRepository.save(currentUser);
-        logger.info("Password updated successfully for user: {}", currentUser.getUsername());
-
-        return currentUser.getId();
+        user.setPassword(passwordEncoder.encode(newPassword.getNewPassword()));
+        userRepository.save(user);
+        logger.info("Password updated successfully for user: {}", username);
     }
 
     @Override
     public User getCurrentUser() {
         logger.info("Fetching current user");
-        return getCurrentUserFromContext();
+
+        // Получаем текущего пользователя из контекста безопасности
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("Пользователь не найден"));
+
+        return userMapper.toDTO(user);
     }
 
     @Override
-    public UpdateUser updateUser(UpdateUser updateUser) {
+    public User updateUser(UpdateUser updateUser) {
         logger.info("Updating user details");
 
-        User currentUser = getCurrentUserFromContext();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
 
-        userMapper.updateUserFromDTO(updateUser, currentUser);
-        userRepository.save(currentUser);
-        logger.info("User details updated successfully for user: {}", currentUser.getUsername());
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("Пользователь не найден"));
 
-        return updateUser;
+        userMapper.updateUserFromDTO(updateUser, user);
+        userRepository.save(user);
+        logger.info("User details updated successfully for user: {}", username);
+
+        return userMapper.toDTO(user);
     }
 
     @Override
     public void updateUserImage(MultipartFile image) {
         logger.info("Updating user image");
 
-        User currentUser = getCurrentUserFromContext();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
 
-        currentUser.setImageUrl("/images/new-avatar.jpg");
-        userRepository.save(currentUser);
-        logger.info("User image updated successfully for user: {}", currentUser.getUsername());
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("Пользователь не найден"));
+
+        String imageUrl = saveImage(image);
+        user.setImageUrl(imageUrl);
+        userRepository.save(user);
+        logger.info("User image updated successfully for user: {}", username);
     }
 
     /**
-     * Получает текущего аутентифицированного пользователя из контекста безопасности.
+     * Сохраняет изображение и возвращает его URL.
      *
-     * @return текущий пользователь
-     * @throws UserNotAuthorizedException если пользователь не авторизован
-     * @throws UserNotFoundException      если пользователь не найден в базе данных
+     * @param image файл изображения
+     * @return URL сохраненного изображения
      */
-    private User getCurrentUserFromContext() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null || !authentication.isAuthenticated()) {
-            logger.error("User not authorized");
-            throw new UserNotAuthorizedException("Пользователь не авторизован");
-        }
-
-        String username = authentication.getName();
-
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> {
-                    logger.error("User not found in database: {}", username);
-                    return new UserNotFoundException("Пользователь не найден в базе данных");
-                });
+    private String saveImage(MultipartFile image) {
+        return "/images/new-avatar.jpg";
     }
 }

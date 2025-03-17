@@ -35,7 +35,9 @@ public class AdServiceImpl implements AdService {
     @Override
     public List<Ad> getAllAds() {
         logger.info("Fetching all ads");
-        return adMapper.adsToAdDTOs(adRepository.findAll());
+        List<ru.skypro.homework.model.Ad> ads = adRepository.findAll();
+        logger.info("Found {} ads", ads.size());
+        return adMapper.adsToAdDTOs(ads);
     }
 
     @Override
@@ -49,7 +51,7 @@ public class AdServiceImpl implements AdService {
         try {
             ad.setImage(Arrays.toString(image.getBytes()));
         } catch (IOException e) {
-            logger.error("Failed to upload image", e);
+            logger.error("Failed to upload image for ad by user: {}", currentUser.getUsername(), e);
             throw new ImageUploadException("Ошибка при загрузке изображения", e);
         }
 
@@ -67,6 +69,7 @@ public class AdServiceImpl implements AdService {
                     logger.error("Ad not found with id: {}", id);
                     return new AdNotFoundException("Объявление не найдено");
                 });
+        logger.info("Ad found with id: {}", id);
         return adMapper.adToExtendedAdDTO(ad);
     }
 
@@ -122,7 +125,10 @@ public class AdServiceImpl implements AdService {
         User currentUser = userService.getCurrentUser();
         logger.info("Fetching ads for user: {}", currentUser.getUsername());
 
-        return adMapper.adsToAdDTOs(adRepository.findByAuthor(currentUser));
+        List<ru.skypro.homework.model.Ad> ads = adRepository.findByAuthor(currentUser);
+        logger.info("Found {} ads for user: {}", ads.size(), currentUser.getUsername());
+
+        return adMapper.adsToAdDTOs(ads);
     }
 
     @Override
@@ -148,7 +154,7 @@ public class AdServiceImpl implements AdService {
             logger.info("Image updated successfully for ad with id: {}", id);
             return imageBytes;
         } catch (IOException e) {
-            logger.error("Failed to upload image", e);
+            logger.error("Failed to upload image for ad with id: {}", id, e);
             throw new ImageUploadException("Ошибка при загрузке изображения", e);
         }
     }

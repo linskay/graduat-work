@@ -7,41 +7,75 @@
 
     <changeSet id="1" author="lins">
         <createTable tableName="users">
+            <!-- Уникальный идентификатор -->
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
 
+            <!-- Логин пользователя -->
             <column name="username" type="VARCHAR(50)">
                 <constraints nullable="false" unique="true"/>
             </column>
 
+            <!-- Пароль пользователя -->
             <column name="password" type="VARCHAR(100)">
                 <constraints nullable="false"/>
             </column>
 
+            <!-- Флаг активности -->
+            <column name="enabled" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Имя пользователя -->
             <column name="first_name" type="VARCHAR(50)">
                 <constraints nullable="false"/>
             </column>
 
+            <!-- Фамилия пользователя -->
             <column name="last_name" type="VARCHAR(50)">
                 <constraints nullable="false"/>
             </column>
 
-            <column name="phone" type="VARCHAR(20)">
-                <constraints nullable="false"/>
-            </column>
-
+            <!-- Email пользователя -->
             <column name="email" type="VARCHAR(100)">
                 <constraints nullable="false" unique="true"/>
             </column>
 
-            <column name="role" type="VARCHAR(20)">
+            <!-- Телефон пользователя -->
+            <column name="phone" type="VARCHAR(20)">
                 <constraints nullable="false"/>
             </column>
 
+            <!-- Ссылка на изображение -->
             <column name="image_url" type="VARCHAR(255)">
                 <constraints nullable="true"/>
             </column>
+
+            <!-- Роль пользователя -->
+            <column name="role" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
         </createTable>
+    </changeSet>
+
+    <!-- Таблица authorities -->
+    <changeSet id="2" author="Lins">
+        <createTable tableName="authorities">
+            <column name="username" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="authority" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <!-- Внешний ключ для authorities -->
+        <addForeignKeyConstraint
+                baseTableName="authorities"
+                baseColumnNames="username"
+                referencedTableName="users"
+                referencedColumnNames="username"
+                constraintName="fk_authorities_users"/>
     </changeSet>
 </databaseChangeLog>

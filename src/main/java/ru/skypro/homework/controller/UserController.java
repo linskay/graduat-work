@@ -37,8 +37,8 @@ public class UserController {
                     @ApiResponse(responseCode = "403", description = "Доступ запрещен")
             }
     )
-    public Long setPassword(@RequestBody NewPassword newPassword) {
-        return userService.updatePassword(newPassword);
+    public void setPassword(@RequestBody NewPassword newPassword) {
+        userService.updatePassword(newPassword);
     }
 
     @GetMapping("/me")
@@ -78,7 +78,7 @@ public class UserController {
                     @ApiResponse(responseCode = "401", description = "Неавторизованный доступ")
             }
     )
-    public UpdateUser updateUser(@RequestBody UpdateUser updateUser) {
+    public ru.skypro.homework.model.User updateUser(@RequestBody UpdateUser updateUser) {
         return userService.updateUser(updateUser);
     }
 

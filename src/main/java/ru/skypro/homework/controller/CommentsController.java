@@ -29,6 +29,7 @@ public class CommentsController {
     @GetMapping
     @Operation(
             summary = "Получение комментариев объявления",
+            description = "Возвращает список комментариев для указанного объявления. Доступно всем пользователям.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -38,11 +39,11 @@ public class CommentsController {
                                     schema = @Schema(implementation = Comments.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
                     @ApiResponse(responseCode = "404", description = "Not found")
             }
     )
     public Comments getComments(@PathVariable Integer id) {
+        log.info("Запрос на получение комментариев для объявления с ID: {}", id);
         List<Comment> comments = commentService.getComments(id);
         Comments response = new Comments();
         response.setCount(comments.size());
@@ -53,10 +54,11 @@ public class CommentsController {
     @PostMapping
     @Operation(
             summary = "Добавление комментария к объявлению",
+            description = "Создает новый комментарий для указанного объявления. Доступно только авторизованным пользователям.",
             responses = {
                     @ApiResponse(
-                            responseCode = "200",
-                            description = "OK",
+                            responseCode = "201",
+                            description = "Created",
                             content = @Content(
                                     mediaType = "application/json",
                                     schema = @Schema(implementation = Comment.class)
@@ -70,6 +72,7 @@ public class CommentsController {
     public Integer addComment(
             @PathVariable Integer id,
             @RequestBody CreateOrUpdateComment comment) {
+        log.info("Запрос на добавление комментария к объявлению с ID: {}", id);
         Comment createdComment = commentService.addComment(id, comment);
         return createdComment.getPk();
     }
@@ -77,6 +80,7 @@ public class CommentsController {
     @DeleteMapping("/{commentId}")
     @Operation(
             summary = "Удаление комментария",
+            description = "Удаляет комментарий по ID. Доступно только автору комментария или администратору.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "OK"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized"),
@@ -88,12 +92,14 @@ public class CommentsController {
     public void deleteComment(
             @PathVariable Integer id,
             @PathVariable Integer commentId) {
+        log.info("Запрос на удаление комментария с ID: {} для объявления с ID: {}", commentId, id);
         commentService.deleteComment(id, commentId);
     }
 
     @PatchMapping("/{commentId}")
     @Operation(
             summary = "Обновление комментария",
+            description = "Обновляет информацию о комментарии. Доступно только автору комментария или администратору.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -112,6 +118,7 @@ public class CommentsController {
             @PathVariable Integer id,
             @PathVariable Integer commentId,
             @RequestBody CreateOrUpdateComment updatedComment) {
+        log.info("Запрос на обновление комментария с ID: {} для объявления с ID: {}", commentId, id);
         return commentService.updateComment(id, commentId, updatedComment);
     }
 }

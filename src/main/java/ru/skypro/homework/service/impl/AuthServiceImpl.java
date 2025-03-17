@@ -35,7 +35,6 @@ public class AuthServiceImpl implements AuthService {
             return false;
         }
 
-        // Создаем пользователя в Spring Security
         manager.createUser(
                 org.springframework.security.core.userdetails.User.withUsername(register.getUsername())
                         .passwordEncoder(this.encoder::encode)

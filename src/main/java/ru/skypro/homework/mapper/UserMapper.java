@@ -51,4 +51,6 @@ public interface UserMapper {
     @Mapping(source = "lastName", target = "lastName")
     @Mapping(source = "phone", target = "phone")
     void updateUserFromDTO(UpdateUser updateUser, @MappingTarget ru.skypro.homework.model.User user);
+
+    ru.skypro.homework.model.User toDTO(ru.skypro.homework.model.User user);
 }

@@ -36,7 +36,9 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public List<Comment> getComments(Integer adId) {
         logger.info("Fetching comments for ad with id: {}", adId);
-        return commentMapper.commentsToCommentDTOs(commentRepository.findByAdId(adId));
+        List<ru.skypro.homework.model.Comment> comments = commentRepository.findByAdId(adId);
+        logger.info("Found {} comments for ad with id: {}", comments.size(), adId);
+        return commentMapper.commentsToCommentDTOs(comments);
     }
 
     @Override

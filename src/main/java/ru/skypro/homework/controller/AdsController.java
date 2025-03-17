@@ -32,6 +32,7 @@ public class AdsController {
     @GetMapping
     @Operation(
             summary = "Получение всех объявлений",
+            description = "Возвращает список всех объявлений. Доступно всем пользователям.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -44,6 +45,7 @@ public class AdsController {
             }
     )
     public Ads getAllAds() {
+        log.info("Запрос на получение всех объявлений");
         List<Ad> ads = adService.getAllAds();
         Ads response = new Ads();
         response.setCount(ads.size());
@@ -54,6 +56,7 @@ public class AdsController {
     @PostMapping(consumes = "multipart/form-data")
     @Operation(
             summary = "Добавление объявления",
+            description = "Создает новое объявление. Доступно только авторизованным пользователям.",
             responses = {
                     @ApiResponse(
                             responseCode = "201",
@@ -70,6 +73,7 @@ public class AdsController {
     public Integer addAd(
             @RequestPart("properties") CreateOrUpdateAd properties,
             @RequestPart("image") MultipartFile image) {
+        log.info("Запрос на добавление объявления");
         Ad ad = adService.addAd(properties, image);
         return ad.getPk();
     }
@@ -77,6 +81,7 @@ public class AdsController {
     @GetMapping("/{id}")
     @Operation(
             summary = "Получение информации об объявлении",
+            description = "Возвращает подробную информацию об объявлении по ID. Доступно всем пользователям.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -86,17 +91,18 @@ public class AdsController {
                                     schema = @Schema(implementation = ExtendedAd.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
                     @ApiResponse(responseCode = "404", description = "Not found")
             }
     )
     public ExtendedAd getAd(@PathVariable Integer id) {
+        log.info("Запрос на получение объявления с ID: {}", id);
         return adService.getAd(id);
     }
 
     @DeleteMapping("/{id}")
     @Operation(
             summary = "Удаление объявления",
+            description = "Удаляет объявление по ID. Доступно только автору объявления или администратору.",
             responses = {
                     @ApiResponse(responseCode = "204", description = "No Content"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized"),
@@ -106,12 +112,14 @@ public class AdsController {
     )
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void removeAd(@PathVariable Integer id) {
+        log.info("Запрос на удаление объявления с ID: {}", id);
         adService.removeAd(id);
     }
 
     @PatchMapping("/{id}")
     @Operation(
             summary = "Обновление информации об объявлении",
+            description = "Обновляет информацию об объявлении. Доступно только автору объявления или администратору.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -129,25 +137,28 @@ public class AdsController {
     public Ad updateAd(
             @PathVariable Integer id,
             @RequestBody CreateOrUpdateAd updatedAd) {
+        log.info("Запрос на обновление объявления с ID: {}", id);
         return adService.updateAd(id, updatedAd);
     }
 
     @GetMapping("/me")
     @Operation(
             summary = "Получение объявлений авторизованного пользователя",
+            description = "Возвращает список объявлений текущего авторизованного пользователя.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
                             description = "OK",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = Ad.class)
+                                    schema = @Schema(implementation = Ads.class)
                             )
                     ),
                     @ApiResponse(responseCode = "401", description = "Unauthorized")
             }
     )
     public Ads getAdsMe() {
+        log.info("Запрос на получение объявлений текущего пользователя");
         List<Ad> ads = adService.getAdsMe();
         Ads response = new Ads();
         response.setCount(ads.size());
@@ -158,6 +169,7 @@ public class AdsController {
     @PatchMapping(value = "/{id}/image", consumes = "multipart/form-data")
     @Operation(
             summary = "Обновление картинки объявления",
+            description = "Обновляет изображение объявления. Доступно только автору объявления или администратору.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -175,6 +187,7 @@ public class AdsController {
     public ResponseEntity<byte[]> updateImage(
             @PathVariable Integer id,
             @RequestPart("image") MultipartFile image) {
+        log.info("Запрос на обновление изображения объявления с ID: {}", id);
         byte[] imageBytes = adService.updateImage(id, image);
         return ResponseEntity.ok(imageBytes);
     }
