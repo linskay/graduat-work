@@ -74,13 +74,34 @@
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
     </dependency>
+    <!-- Зависимость для Liquibase -->
+    <dependency>
+      <groupId>org.liquibase</groupId>
+      <artifactId>liquibase-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+    <!-- MapStruct -->
+    <dependency>
+      <groupId>org.mapstruct</groupId>
+      <artifactId>mapstruct</artifactId>
+      <version>1.5.5.Final</version>
+    </dependency>
+    <dependency>
+      <groupId>org.mapstruct</groupId>
+      <artifactId>mapstruct-processor</artifactId>
+      <version>1.5.5.Final</version>
+      <scope>provided</scope>
+    </dependency>
   </dependencies>
 
   <build>
     <resources>
       <resource>
         <directory>src/main/resources</directory>
-        <filtering>true</filtering> <!-- Включаем фильтрацию ресурсов -->
+        <filtering>true</filtering>
       </resource>
     </resources>
     <plugins>
@@ -90,7 +111,7 @@
       <version>3.3.0</version>
       <configuration>
         <delimiters>
-          <delimiter>@</delimiter> <!-- Используем @ как разделитель -->
+          <delimiter>@</delimiter>
         </delimiters>
       </configuration>
     </plugin>

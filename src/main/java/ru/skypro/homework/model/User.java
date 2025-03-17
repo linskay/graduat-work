@@ -1,6 +1,5 @@
 package ru.skypro.homework.model;
 
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import ru.skypro.homework.dto.Role;

@@ -9,9 +9,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import ru.skypro.homework.dto.CommentDTO;
-import ru.skypro.homework.dto.CommentsDTO;
-import ru.skypro.homework.dto.CreateOrUpdateCommentDTO;
+import ru.skypro.homework.dto.Comment;
+import ru.skypro.homework.dto.Comments;
+import ru.skypro.homework.dto.CreateOrUpdateComment;
 import ru.skypro.homework.service.CommentService;
 
 import java.util.List;
@@ -35,16 +35,16 @@ public class CommentsController {
                             description = "OK",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = CommentsDTO.class)
+                                    schema = @Schema(implementation = Comments.class)
                             )
                     ),
                     @ApiResponse(responseCode = "401", description = "Unauthorized"),
                     @ApiResponse(responseCode = "404", description = "Not found")
             }
     )
-    public CommentsDTO getComments(@PathVariable Integer id) {
-        List<CommentDTO> comments = commentService.getComments(id);
-        CommentsDTO response = new CommentsDTO();
+    public Comments getComments(@PathVariable Integer id) {
+        List<Comment> comments = commentService.getComments(id);
+        Comments response = new Comments();
         response.setCount(comments.size());
         response.setResults(comments);
         return response;
@@ -59,7 +59,7 @@ public class CommentsController {
                             description = "OK",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = CommentDTO.class)
+                                    schema = @Schema(implementation = Comment.class)
                             )
                     ),
                     @ApiResponse(responseCode = "401", description = "Unauthorized"),
@@ -69,8 +69,8 @@ public class CommentsController {
     @ResponseStatus(HttpStatus.CREATED)
     public Integer addComment(
             @PathVariable Integer id,
-            @RequestBody CreateOrUpdateCommentDTO comment) {
-        CommentDTO createdComment = commentService.addComment(id, comment);
+            @RequestBody CreateOrUpdateComment comment) {
+        Comment createdComment = commentService.addComment(id, comment);
         return createdComment.getPk();
     }
 
@@ -100,7 +100,7 @@ public class CommentsController {
                             description = "OK",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = CommentDTO.class)
+                                    schema = @Schema(implementation = Comment.class)
                             )
                     ),
                     @ApiResponse(responseCode = "401", description = "Unauthorized"),
@@ -108,10 +108,10 @@ public class CommentsController {
                     @ApiResponse(responseCode = "404", description = "Not found")
             }
     )
-    public CommentDTO updateComment(
+    public Comment updateComment(
             @PathVariable Integer id,
             @PathVariable Integer commentId,
-            @RequestBody CreateOrUpdateCommentDTO updatedComment) {
+            @RequestBody CreateOrUpdateComment updatedComment) {
         return commentService.updateComment(id, commentId, updatedComment);
     }
 }
