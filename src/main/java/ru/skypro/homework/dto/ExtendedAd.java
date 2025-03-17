@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @Schema(description = "DTO для представления расширенной информации об объявлении")
-public class ExtendedAdDTO extends AdDTO {
+public class ExtendedAd extends Ad {
 
     @Schema(description = "Имя автора объявления", example = "Олег")
     private String authorFirstName;

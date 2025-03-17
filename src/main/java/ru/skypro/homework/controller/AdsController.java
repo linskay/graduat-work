@@ -11,10 +11,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import ru.skypro.homework.dto.AdDTO;
-import ru.skypro.homework.dto.AdsDTO;
-import ru.skypro.homework.dto.CreateOrUpdateAdDTO;
-import ru.skypro.homework.dto.ExtendedAdDTO;
+import ru.skypro.homework.dto.Ad;
+import ru.skypro.homework.dto.Ads;
+import ru.skypro.homework.dto.CreateOrUpdateAd;
+import ru.skypro.homework.dto.ExtendedAd;
 import ru.skypro.homework.service.AdService;
 
 import java.util.List;
@@ -38,14 +38,14 @@ public class AdsController {
                             description = "OK",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = AdsDTO.class)
+                                    schema = @Schema(implementation = Ads.class)
                             )
                     )
             }
     )
-    public AdsDTO getAllAds() {
-        List<AdDTO> ads = adService.getAllAds();
-        AdsDTO response = new AdsDTO();
+    public Ads getAllAds() {
+        List<Ad> ads = adService.getAllAds();
+        Ads response = new Ads();
         response.setCount(ads.size());
         response.setResults(ads);
         return response;
@@ -60,7 +60,7 @@ public class AdsController {
                             description = "Created",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = AdDTO.class)
+                                    schema = @Schema(implementation = Ad.class)
                             )
                     ),
                     @ApiResponse(responseCode = "401", description = "Unauthorized")
@@ -68,9 +68,9 @@ public class AdsController {
     )
     @ResponseStatus(HttpStatus.CREATED)
     public Integer addAd(
-            @RequestPart("properties") CreateOrUpdateAdDTO properties,
+            @RequestPart("properties") CreateOrUpdateAd properties,
             @RequestPart("image") MultipartFile image) {
-        AdDTO ad = adService.addAd(properties, image);
+        Ad ad = adService.addAd(properties, image);
         return ad.getPk();
     }
 
@@ -83,14 +83,14 @@ public class AdsController {
                             description = "OK",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = ExtendedAdDTO.class)
+                                    schema = @Schema(implementation = ExtendedAd.class)
                             )
                     ),
                     @ApiResponse(responseCode = "401", description = "Unauthorized"),
                     @ApiResponse(responseCode = "404", description = "Not found")
             }
     )
-    public ExtendedAdDTO getAd(@PathVariable Integer id) {
+    public ExtendedAd getAd(@PathVariable Integer id) {
         return adService.getAd(id);
     }
 
@@ -118,7 +118,7 @@ public class AdsController {
                             description = "OK",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = AdDTO.class)
+                                    schema = @Schema(implementation = Ad.class)
                             )
                     ),
                     @ApiResponse(responseCode = "401", description = "Unauthorized"),
@@ -126,9 +126,9 @@ public class AdsController {
                     @ApiResponse(responseCode = "404", description = "Not found")
             }
     )
-    public AdDTO updateAd(
+    public Ad updateAd(
             @PathVariable Integer id,
-            @RequestBody CreateOrUpdateAdDTO updatedAd) {
+            @RequestBody CreateOrUpdateAd updatedAd) {
         return adService.updateAd(id, updatedAd);
     }
 
@@ -141,15 +141,15 @@ public class AdsController {
                             description = "OK",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = AdDTO.class)
+                                    schema = @Schema(implementation = Ad.class)
                             )
                     ),
                     @ApiResponse(responseCode = "401", description = "Unauthorized")
             }
     )
-    public AdsDTO getAdsMe() {
-        List<AdDTO> ads = adService.getAdsMe();
-        AdsDTO response = new AdsDTO();
+    public Ads getAdsMe() {
+        List<Ad> ads = adService.getAdsMe();
+        Ads response = new Ads();
         response.setCount(ads.size());
         response.setResults(ads);
         return response;

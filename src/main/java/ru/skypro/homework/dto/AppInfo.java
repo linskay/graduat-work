@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @Schema(description = "DTO для представления информации о приложении")
-public class AppInfoDTO {
+public class AppInfo {
 
     @Schema(description = "Название приложения", example = "My Application")
     private String name;
