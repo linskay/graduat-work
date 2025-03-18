@@ -5,7 +5,7 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
-    <changeSet id="1" author="lins">
+    <changeSet id="1" author="Lins">
         <createTable tableName="users">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
@@ -27,20 +27,20 @@
                 <constraints nullable="false"/>
             </column>
 
-            <column name="phone" type="VARCHAR(20)">
-                <constraints nullable="false"/>
-            </column>
-
             <column name="email" type="VARCHAR(100)">
-                <constraints nullable="false" unique="true"/>
+                <constraints nullable="true" unique="true"/>
             </column>
 
-            <column name="role" type="VARCHAR(20)">
+            <column name="phone" type="VARCHAR(20)">
                 <constraints nullable="false"/>
             </column>
 
             <column name="image_url" type="VARCHAR(255)">
                 <constraints nullable="true"/>
+            </column>
+
+            <column name="role" type="VARCHAR(20)">
+                <constraints nullable="false"/>
             </column>
         </createTable>
     </changeSet>
