@@ -36,10 +36,10 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ImageUploadException.class)
-    public ResponseEntity<Map<String, String>> handleImageUploadException(ImageUploadException ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("message", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    public ResponseEntity<String> handleImageUploadException(ImageUploadException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ex.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
