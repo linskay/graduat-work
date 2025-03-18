@@ -10,11 +10,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import ru.skypro.homework.dto.NewPassword;
 import ru.skypro.homework.dto.UpdateUser;
+import ru.skypro.homework.exception.ImageUploadException;
 import ru.skypro.homework.exception.UserNotFoundException;
 import ru.skypro.homework.mapper.UserMapper;
 import ru.skypro.homework.model.User;
 import ru.skypro.homework.repository.UserRepository;
 import ru.skypro.homework.service.UserService;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -81,25 +86,45 @@ public class UserServiceImpl implements UserService {
     public void updateUserImage(MultipartFile image) {
         logger.info("Updating user image");
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
+        if (image == null || image.isEmpty()) {
+            throw new ImageUploadException("Файл изображения пуст");
+        }
 
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UserNotFoundException("Пользователь не найден"));
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = authentication.getName();
 
-        String imageUrl = saveImage(image);
-        user.setImageUrl(imageUrl);
-        userRepository.save(user);
-        logger.info("User image updated successfully for user: {}", username);
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new UserNotFoundException("Пользователь не найден"));
+
+            String imageUrl = saveImage(image);
+            user.setImageUrl(imageUrl);
+            userRepository.save(user);
+            logger.info("User image updated successfully for user: {}", username);
+        } catch (IOException e) {
+            throw new ImageUploadException("Ошибка при сохранении изображения", e);
+        }
     }
 
-    /**
-     * Сохраняет изображение и возвращает его URL.
-     *
-     * @param image файл изображения
-     * @return URL сохраненного изображения
-     */
-    private String saveImage(MultipartFile image) {
-        return "/images/new-avatar.jpg";
+    private String saveImage(MultipartFile image) throws IOException {
+        if (image.isEmpty()) {
+            throw new IllegalArgumentException("Файл изображения пуст");
+        }
+
+        // Создаем папку, если она не существует
+        File uploadDir = new File("uploads/images");
+        if (!uploadDir.exists()) {
+            uploadDir.mkdirs();
+        }
+
+        // Генерируем уникальное имя файла
+        String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
+        File file = new File(uploadDir, fileName);
+
+        // Сохраняем файл
+        image.transferTo(file);
+
+        // Возвращаем относительный путь
+        return "/uploads/images/" + fileName;
     }
 }

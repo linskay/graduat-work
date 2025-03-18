@@ -8,4 +8,5 @@
     <include file="/V1__Create_users_table.xml" relativeToChangelogFile="true"/>
     <include file="/V1__Create_ads_table.xml" relativeToChangelogFile="true"/>
     <include file="/V1__Create_comments_table.xml" relativeToChangelogFile="true"/>
+    <include file="V1__Create_authorities_table.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

@@ -58,24 +58,4 @@
             </column>
         </createTable>
     </changeSet>
-
-    <!-- Таблица authorities -->
-    <changeSet id="2" author="Lins">
-        <createTable tableName="authorities">
-            <column name="username" type="VARCHAR(50)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="authority" type="VARCHAR(50)">
-                <constraints nullable="false"/>
-            </column>
-        </createTable>
-
-        <!-- Внешний ключ для authorities -->
-        <addForeignKeyConstraint
-                baseTableName="authorities"
-                baseColumnNames="username"
-                referencedTableName="users"
-                referencedColumnNames="username"
-                constraintName="fk_authorities_users"/>
-    </changeSet>
 </databaseChangeLog>
