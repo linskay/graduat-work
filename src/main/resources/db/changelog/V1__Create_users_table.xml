@@ -6,6 +6,7 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
     <changeSet id="1" author="Lins">
+        <comment>Create users table with required fields</comment>
         <createTable tableName="users">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
@@ -40,8 +41,15 @@
             </column>
 
             <column name="role" type="VARCHAR(20)">
+                <constraints nullable="true"/>
+            </column>
+
+            <column name="enabled" type="BOOLEAN" defaultValue="true">
                 <constraints nullable="false"/>
             </column>
         </createTable>
+        <createIndex tableName="users" indexName="idx_users_username" unique="true">
+            <column name="username"/>
+        </createIndex>
     </changeSet>
 </databaseChangeLog>
