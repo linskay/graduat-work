@@ -10,6 +10,7 @@ import ru.skypro.homework.dto.CreateOrUpdateAd;
 import ru.skypro.homework.dto.ExtendedAd;
 import ru.skypro.homework.dto.Role;
 import ru.skypro.homework.exception.AdNotFoundException;
+import ru.skypro.homework.exception.ErrorMessages;
 import ru.skypro.homework.exception.ImageUploadException;
 import ru.skypro.homework.exception.UnauthorizedAccessException;
 import ru.skypro.homework.mapper.AdMapper;
@@ -19,7 +20,9 @@ import ru.skypro.homework.service.AdService;
 import ru.skypro.homework.service.UserService;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 @Service
@@ -27,6 +30,7 @@ import java.util.List;
 public class AdServiceImpl implements AdService {
 
     private static final Logger logger = LoggerFactory.getLogger(AdServiceImpl.class);
+    private static final String IMAGE_UPLOAD_DIR = "src/main/resources/static/uploads/images/ads/";
 
     private final AdRepository adRepository;
     private final UserService userService;
@@ -43,14 +47,20 @@ public class AdServiceImpl implements AdService {
         User currentUser = userService.getCurrentUser();
         logger.info("Adding new ad by user: {}", currentUser.getUsername());
 
+        if (image == null || image.isEmpty()) {
+            logger.error(ErrorMessages.IMAGE_FILE_EMPTY);
+            throw new ImageUploadException(ErrorMessages.IMAGE_FILE_EMPTY);
+        }
+
         ru.skypro.homework.model.Ad ad = adMapper.createOrUpdateAdDTOToAd(properties);
         ad.setAuthor(currentUser);
 
         try {
-            ad.setImage(Arrays.toString(image.getBytes()));
+            String imagePath = saveImage(image);
+            ad.setImage(imagePath);
         } catch (IOException e) {
-            logger.error("Failed to upload image", e);
-            throw new ImageUploadException("Ошибка при загрузке изображения", e);
+            logger.error(ErrorMessages.IMAGE_UPLOAD_FAILED, e);
+            throw new ImageUploadException(ErrorMessages.IMAGE_UPLOAD_FAILED, e);
         }
 
         ru.skypro.homework.model.Ad savedAd = adRepository.save(ad);
@@ -64,8 +74,8 @@ public class AdServiceImpl implements AdService {
         logger.info("Fetching ad with id: {}", id);
         ru.skypro.homework.model.Ad ad = adRepository.findById(id)
                 .orElseThrow(() -> {
-                    logger.error("Ad not found with id: {}", id);
-                    return new AdNotFoundException("Объявление не найдено");
+                    logger.error(ErrorMessages.AD_NOT_FOUND);
+                    return new AdNotFoundException(ErrorMessages.AD_NOT_FOUND);
                 });
         return adMapper.adToExtendedAdDTO(ad);
     }
@@ -75,15 +85,15 @@ public class AdServiceImpl implements AdService {
         logger.info("Removing ad with id: {}", id);
         ru.skypro.homework.model.Ad ad = adRepository.findById(id)
                 .orElseThrow(() -> {
-                    logger.error("Ad not found with id: {}", id);
-                    return new AdNotFoundException("Объявление не найдено");
+                    logger.error(ErrorMessages.AD_NOT_FOUND);
+                    return new AdNotFoundException(ErrorMessages.AD_NOT_FOUND);
                 });
 
         User currentUser = userService.getCurrentUser();
 
         if (!ad.getAuthor().equals(currentUser) && !isAdmin(currentUser)) {
-            logger.error("Unauthorized access to delete ad by user: {}", currentUser.getUsername());
-            throw new UnauthorizedAccessException("У вас нет прав для удаления этого объявления");
+            logger.error(ErrorMessages.UNAUTHORIZED_ACCESS);
+            throw new UnauthorizedAccessException(ErrorMessages.UNAUTHORIZED_ACCESS);
         }
 
         adRepository.delete(ad);
@@ -95,15 +105,15 @@ public class AdServiceImpl implements AdService {
         logger.info("Updating ad with id: {}", id);
         ru.skypro.homework.model.Ad ad = adRepository.findById(id)
                 .orElseThrow(() -> {
-                    logger.error("Ad not found with id: {}", id);
-                    return new AdNotFoundException("Объявление не найдено");
+                    logger.error(ErrorMessages.AD_NOT_FOUND);
+                    return new AdNotFoundException(ErrorMessages.AD_NOT_FOUND);
                 });
 
         User currentUser = userService.getCurrentUser();
 
         if (!ad.getAuthor().equals(currentUser) && !isAdmin(currentUser)) {
-            logger.error("Unauthorized access to update ad by user: {}", currentUser.getUsername());
-            throw new UnauthorizedAccessException("У вас нет прав для редактирования этого объявления");
+            logger.error(ErrorMessages.UNAUTHORIZED_ACCESS);
+            throw new UnauthorizedAccessException(ErrorMessages.UNAUTHORIZED_ACCESS);
         }
 
         ru.skypro.homework.model.Ad updatedEntity = adMapper.createOrUpdateAdDTOToAd(updatedAd);
@@ -130,27 +140,52 @@ public class AdServiceImpl implements AdService {
         logger.info("Updating image for ad with id: {}", id);
         ru.skypro.homework.model.Ad ad = adRepository.findById(id)
                 .orElseThrow(() -> {
-                    logger.error("Ad not found with id: {}", id);
-                    return new AdNotFoundException("Объявление не найдено");
+                    logger.error(ErrorMessages.AD_NOT_FOUND);
+                    return new AdNotFoundException(ErrorMessages.AD_NOT_FOUND);
                 });
 
         User currentUser = userService.getCurrentUser();
 
         if (!ad.getAuthor().equals(currentUser) && !isAdmin(currentUser)) {
-            logger.error("Unauthorized access to update image by user: {}", currentUser.getUsername());
-            throw new UnauthorizedAccessException("У вас нет прав для обновления изображения этого объявления");
+            logger.error(ErrorMessages.UNAUTHORIZED_ACCESS);
+            throw new UnauthorizedAccessException(ErrorMessages.UNAUTHORIZED_ACCESS);
+        }
+
+        if (image == null || image.isEmpty()) {
+            logger.error(ErrorMessages.IMAGE_FILE_EMPTY);
+            throw new ImageUploadException(ErrorMessages.IMAGE_FILE_EMPTY);
         }
 
         try {
-            byte[] imageBytes = image.getBytes();
-            ad.setImage(Arrays.toString(imageBytes));
+            String imagePath = saveImage(image);
+            ad.setImage(imagePath);
             adRepository.save(ad);
             logger.info("Image updated successfully for ad with id: {}", id);
-            return imageBytes;
+            return image.getBytes();
         } catch (IOException e) {
-            logger.error("Failed to upload image", e);
-            throw new ImageUploadException("Ошибка при загрузке изображения", e);
+            logger.error(ErrorMessages.IMAGE_UPLOAD_FAILED, e);
+            throw new ImageUploadException(ErrorMessages.IMAGE_UPLOAD_FAILED, e);
         }
+    }
+
+    /**
+     * Сохраняет изображение в файловой системе и возвращает путь к файлу.
+     *
+     * @param image файл изображения
+     * @return путь к сохраненному изображению
+     */
+    private String saveImage(MultipartFile image) throws IOException {
+        Path uploadPath = Paths.get(IMAGE_UPLOAD_DIR);
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+
+        String fileName = System.currentTimeMillis() + "_" + image.getOriginalFilename();
+        Path filePath = uploadPath.resolve(fileName);
+
+        Files.copy(image.getInputStream(), filePath);
+
+        return filePath.toString();
     }
 
     /**

@@ -16,7 +16,7 @@ public class Comment {
     private Integer id;
 
     private String text;
-    private Instant createdAt; // Дата и время создания комментария
+    private Instant createdAt;
 
     @ManyToOne
     @JoinColumn(name = "author_id")
@@ -24,5 +24,5 @@ public class Comment {
 
     @ManyToOne
     @JoinColumn(name = "ad_id")
-    private Ad ad; // Объявление, к которому относится комментарий
+    private Ad ad;
 }
