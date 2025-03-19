@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ru.skypro.homework.dto.Ad;
@@ -44,11 +45,7 @@ public class AdsController {
             }
     )
     public Ads getAllAds() {
-        List<Ad> ads = adService.getAllAds();
-        Ads response = new Ads();
-        response.setCount(ads.size());
-        response.setResults(ads);
-        return response;
+        return adService.getAllAds();
     }
 
     @PostMapping(consumes = "multipart/form-data")
@@ -90,6 +87,7 @@ public class AdsController {
                     @ApiResponse(responseCode = "404", description = "Not found")
             }
     )
+    @PreAuthorize("isAuthenticated()")
     public ExtendedAd getAd(@PathVariable Integer id) {
         return adService.getAd(id);
     }

@@ -5,10 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import ru.skypro.homework.dto.Ad;
-import ru.skypro.homework.dto.CreateOrUpdateAd;
-import ru.skypro.homework.dto.ExtendedAd;
-import ru.skypro.homework.dto.Role;
+import ru.skypro.homework.dto.*;
 import ru.skypro.homework.exception.AdNotFoundException;
 import ru.skypro.homework.exception.ErrorMessages;
 import ru.skypro.homework.exception.ImageUploadException;
@@ -37,9 +34,13 @@ public class AdServiceImpl implements AdService {
     private final AdMapper adMapper;
 
     @Override
-    public List<Ad> getAllAds() {
+    public Ads getAllAds() {
         logger.info("Fetching all ads");
-        return adMapper.adsToAdDTOs(adRepository.findAll());
+        List<ru.skypro.homework.model.Ad> ads = adRepository.findAll();
+        Ads response = new Ads();
+        response.setCount(ads.size());
+        response.setResults(adMapper.adsToAdDTOs(ads));
+        return response;
     }
 
     @Override
@@ -72,11 +73,18 @@ public class AdServiceImpl implements AdService {
     @Override
     public ExtendedAd getAd(Integer id) {
         logger.info("Fetching ad with id: {}", id);
+
+        if (id == null) {
+            logger.error("Ad ID is null");
+            throw new IllegalArgumentException("Ad ID cannot be null");
+        }
+
         ru.skypro.homework.model.Ad ad = adRepository.findById(id)
                 .orElseThrow(() -> {
                     logger.error(ErrorMessages.AD_NOT_FOUND);
                     return new AdNotFoundException(ErrorMessages.AD_NOT_FOUND);
                 });
+
         return adMapper.adToExtendedAdDTO(ad);
     }
 
