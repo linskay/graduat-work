@@ -20,7 +20,7 @@ Content-Type: application/json
   "password": "password",
   "firstName": " asdad",
   "lastName": " asdad",
-  "phone": " asdad",
+  "phone": "+7 (999) 123-45-67",
   "role": "USER"
 }
 
@@ -40,7 +40,7 @@ Content-Type: application/json
 Authorization: Basic user@gmail.com password
 
 {
-  "phone": "33333",
+  "phone": "+7 (999) 123-45-67",
   "lastName": "Ivanov",
   "firstName": "Ivan"
 }
@@ -56,8 +56,8 @@ Content-Type: application/json
 Authorization: Basic user@gmail.com password
 
 {
-  "newPassword": "password",
-  "currentPassword": "password1"
+  "newPassword": "password123",
+  "currentPassword": "password1234"
 }
 
 ###

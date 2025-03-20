@@ -12,10 +12,6 @@
                 <constraints primaryKey="true" nullable="false"/>
             </column>
 
-            <column name="username" type="VARCHAR(50)">
-                <constraints nullable="false" unique="true"/>
-            </column>
-
             <column name="password" type="VARCHAR(100)">
                 <constraints nullable="false"/>
             </column>
@@ -36,20 +32,17 @@
                 <constraints nullable="false"/>
             </column>
 
-            <column name="image_url" type="VARCHAR(255)">
-                <constraints nullable="true"/>
+            <column name="image_url" type="VARCHAR(255)" defaultValue="default-avatar.jpg">
+                <constraints nullable="false"/>
             </column>
 
-            <column name="role" type="VARCHAR(20)">
-                <constraints nullable="true"/>
+            <column name="role" type="VARCHAR(20)" defaultValue="USER">
+                <constraints nullable="false"/>
             </column>
 
             <column name="enabled" type="BOOLEAN" defaultValue="true">
                 <constraints nullable="false"/>
             </column>
         </createTable>
-        <createIndex tableName="users" indexName="idx_users_username" unique="true">
-            <column name="username"/>
-        </createIndex>
     </changeSet>
 </databaseChangeLog>

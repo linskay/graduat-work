@@ -18,7 +18,7 @@ public class ExtendedAd extends Ad {
     @Schema(description = "Описание объявления", example = "Отличный товар, почти новый")
     private String description;
 
-    @Schema(description = "Email автора объявления", example = "ivan@example.com")
+    @Schema(description = "Логин автора объявления", example = "ivan@example.com")
     private String email;
 
     @Schema(description = "Телефон автора объявления", example = "+79991234567")

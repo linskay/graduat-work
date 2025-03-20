@@ -47,8 +47,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public boolean register(Register register) {
-        if (userDetailsManager.userExists(register.getUsername())) {
-            log.warn("User already exists: {}", register.getUsername());
+        String email = register.getUsername();
+        if (userRepository.findByEmail(email).isPresent()) {
+            log.warn("User already exists: {}", email);
             return false;
         }
 
@@ -56,7 +57,7 @@ public class AuthServiceImpl implements AuthService {
             log.info("Registering user with data: {}", register);
 
             jdbcTemplate.update(
-                    "INSERT INTO users (username, password, enabled, first_name, last_name, phone, role) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO users (email, password, enabled, first_name, last_name, phone, role) VALUES (?, ?, ?, ?, ?, ?, ?)",
                     register.getUsername(),
                     passwordEncoder.encode(register.getPassword()),
                     true,
@@ -67,7 +68,7 @@ public class AuthServiceImpl implements AuthService {
             );
 
             jdbcTemplate.update(
-                    "INSERT INTO authorities (username, authority) VALUES (?, ?)",
+                    "INSERT INTO authorities (email, authority) VALUES (?, ?)",
                     register.getUsername(),
                     "ROLE_" + register.getRole().name()
             );

@@ -4,10 +4,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.factory.Mappers;
-import ru.skypro.homework.dto.Login;
-import ru.skypro.homework.dto.Register;
-import ru.skypro.homework.dto.UpdateUser;
-import ru.skypro.homework.dto.User;
+import ru.skypro.homework.dto.*;
 
 @Mapper(componentModel = "spring")
 public interface UserMapper {
@@ -29,11 +26,11 @@ public interface UserMapper {
     @Mapping(source = "imageUrl", target = "imageUrl")
     ru.skypro.homework.model.User toUser(User userDTO);
 
-    @Mapping(source = "username", target = "username")
+    @Mapping(source = "username", target = "email")
     @Mapping(source = "password", target = "password")
     ru.skypro.homework.model.User toUser(Login login);
 
-    @Mapping(source = "username", target = "username")
+    @Mapping(source = "username", target = "email")
     @Mapping(source = "password", target = "password")
     @Mapping(source = "firstName", target = "firstName")
     @Mapping(source = "lastName", target = "lastName")
@@ -41,14 +38,21 @@ public interface UserMapper {
     @Mapping(source = "role", target = "role")
     ru.skypro.homework.model.User toUser(Register register);
 
+
     /**
      * Обновляет существующий объект User на основе DTO.
      *
      * @param updateUser DTO с новыми данными
      * @param user       существующий объект User
      */
-    @Mapping(source = "firstName", target = "firstName")
-    @Mapping(source = "lastName", target = "lastName")
-    @Mapping(source = "phone", target = "phone")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "email", ignore = true)
+    @Mapping(target = "password", ignore = true)
+    @Mapping(target = "role", ignore = true)
+    @Mapping(target = "imageUrl", ignore = true)
+    @Mapping(target = "ads", ignore = true)
     void updateUserFromDTO(UpdateUser updateUser, @MappingTarget ru.skypro.homework.model.User user);
+
+    //    @Mapping(source = "newPassword", target = "password")
+//    User toUserPassword(NewPassword newPassword);
 }

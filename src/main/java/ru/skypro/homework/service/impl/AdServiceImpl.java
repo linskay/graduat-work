@@ -1,6 +1,7 @@
 package ru.skypro.homework.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AdServiceImpl implements AdService {
@@ -45,29 +47,40 @@ public class AdServiceImpl implements AdService {
 
     @Override
     public Ad addAd(CreateOrUpdateAd properties, MultipartFile image) {
-        User currentUser = userService.getCurrentUser();
-        logger.info("Adding new ad by user: {}", currentUser.getUsername());
-
-        if (image == null || image.isEmpty()) {
-            logger.error(ErrorMessages.IMAGE_FILE_EMPTY);
-            throw new ImageUploadException(ErrorMessages.IMAGE_FILE_EMPTY);
-        }
-
-        ru.skypro.homework.model.Ad ad = adMapper.createOrUpdateAdDTOToAd(properties);
-        ad.setAuthor(currentUser);
-
         try {
+            // Получаем текущего пользователя
+            User currentUser = userService.getCurrentUser();
+                 log.info("Adding new ad by user: {}", currentUser.getEmail());
+
+            // Проверяем, что изображение не пустое
+            if (image == null || image.isEmpty()) {
+                log.error(ErrorMessages.IMAGE_FILE_EMPTY);
+                throw new ImageUploadException(ErrorMessages.IMAGE_FILE_EMPTY);
+            }
+
+            // Проверяем формат изображения
+            if (!isImageFile(image)) {
+                log.error(ErrorMessages.IMAGE_FILE_INVALID_FORMAT);
+                throw new ImageUploadException(ErrorMessages.IMAGE_FILE_INVALID_FORMAT);
+            }
+
+            // Создаем объявление
+            ru.skypro.homework.model.Ad ad = adMapper.createOrUpdateAdDTOToAd(properties);
+            ad.setAuthor(currentUser); // Устанавливаем автора
+
+            // Сохраняем изображение
             String imagePath = saveImage(image);
             ad.setImage(imagePath);
-        } catch (IOException e) {
-            logger.error(ErrorMessages.IMAGE_UPLOAD_FAILED, e);
-            throw new ImageUploadException(ErrorMessages.IMAGE_UPLOAD_FAILED, e);
+
+            // Сохраняем объявление в базе данных
+            ru.skypro.homework.model.Ad savedAd = adRepository.save(ad);
+            log.info("Ad added successfully with id: {}", savedAd.getId());
+
+            return adMapper.adToAdDTO(savedAd);
+        } catch (Exception e) {
+            log.error("Error while adding ad: {}", e.getMessage(), e);
+            throw new RuntimeException("Произошла внутренняя ошибка сервера", e);
         }
-
-        ru.skypro.homework.model.Ad savedAd = adRepository.save(ad);
-        logger.info("Ad added successfully with id: {}", savedAd.getId());
-
-        return adMapper.adToAdDTO(savedAd);
     }
 
     @Override
@@ -138,7 +151,7 @@ public class AdServiceImpl implements AdService {
     @Override
     public List<Ad> getAdsMe() {
         User currentUser = userService.getCurrentUser();
-        logger.info("Fetching ads for user: {}", currentUser.getUsername());
+        logger.info("Fetching ads for user: {}", currentUser.getEmail());
 
         return adMapper.adsToAdDTOs(adRepository.findByAuthor(currentUser));
     }
@@ -176,12 +189,6 @@ public class AdServiceImpl implements AdService {
         }
     }
 
-    /**
-     * Сохраняет изображение в файловой системе и возвращает путь к файлу.
-     *
-     * @param image файл изображения
-     * @return путь к сохраненному изображению
-     */
     private String saveImage(MultipartFile image) throws IOException {
         Path uploadPath = Paths.get(IMAGE_UPLOAD_DIR);
         if (!Files.exists(uploadPath)) {
@@ -193,7 +200,12 @@ public class AdServiceImpl implements AdService {
 
         Files.copy(image.getInputStream(), filePath);
 
-        return filePath.toString();
+        return "/uploads/images/ads/" + fileName;
+    }
+
+    private boolean isImageFile(MultipartFile file) {
+        String contentType = file.getContentType();
+        return contentType != null && contentType.startsWith("image/");
     }
 
     /**

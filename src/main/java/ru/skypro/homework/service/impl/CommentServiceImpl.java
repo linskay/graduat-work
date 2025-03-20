@@ -42,7 +42,7 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public Comment addComment(Integer adId, CreateOrUpdateComment commentDTO) {
         User currentUser = userService.getCurrentUser();
-        logger.info("Adding new comment by user: {}", currentUser.getUsername());
+        logger.info("Adding new comment by user: {}", currentUser.getEmail());
 
         Ad ad = adRepository.findById(adId)
                 .orElseThrow(() -> {
@@ -79,7 +79,7 @@ public class CommentServiceImpl implements CommentService {
         User currentUser = userService.getCurrentUser();
 
         if (!comment.getAuthor().equals(currentUser) && !isAdmin(currentUser)) {
-            logger.error("Unauthorized access to delete comment by user: {}", currentUser.getUsername());
+            logger.error("Unauthorized access to delete comment by user: {}", currentUser.getEmail());
             throw new UnauthorizedAccessException("У вас нет прав для удаления этого комментария");
         }
 
@@ -105,7 +105,7 @@ public class CommentServiceImpl implements CommentService {
         User currentUser = userService.getCurrentUser();
 
         if (!comment.getAuthor().equals(currentUser) && !isAdmin(currentUser)) {
-            logger.error("Unauthorized access to update comment by user: {}", currentUser.getUsername());
+            logger.error("Unauthorized access to update comment by user: {}", currentUser.getEmail());
             throw new UnauthorizedAccessException("У вас нет прав для редактирования этого комментария");
         }
 

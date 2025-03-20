@@ -6,8 +6,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ru.skypro.homework.dto.NewPassword;
@@ -15,8 +21,14 @@ import ru.skypro.homework.dto.UpdateUser;
 import ru.skypro.homework.dto.User;
 import ru.skypro.homework.service.UserService;
 
+import javax.validation.Valid;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
 @Slf4j
 @CrossOrigin(value = "http://localhost:3000")
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/users")
 @Tag(name = "Пользователи", description = "Операции с пользователями")
@@ -24,21 +36,27 @@ public class UserController {
 
     private final UserService userService;
 
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
-
-    @PostMapping("/set_password")
+    @PostMapping("/set_password") //toDo тесты - метод работает через раз: 500/200
     @Operation(
             summary = "Обновление пароля",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Пароль обновлен"),
-                    @ApiResponse(responseCode = "401", description = "Неавторизованный доступ"),
-                    @ApiResponse(responseCode = "403", description = "Доступ запрещен")
+                    @ApiResponse(responseCode = "200", description = "OK"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden")
             }
     )
-    public Long setPassword(@RequestBody NewPassword newPassword) {
-        return userService.updatePassword(newPassword);
+    @ResponseStatus(HttpStatus.OK)
+    public void setPassword(@Valid @RequestBody NewPassword newPassword) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        log.debug("Получен объект NewPassword: {}", newPassword);
+        log.debug("currentPassword: {}", newPassword.getCurrentPassword());
+        log.debug("newPassword: {}", newPassword.getNewPassword());
+
+        log.info("Запрос на смену пароля для пользователя: {}", email);
+        userService.changePassword(email, newPassword);
+        log.info("Пароль успешно изменен для пользователя: {}", email);
     }
 
     @GetMapping("/me")
@@ -63,25 +81,6 @@ public class UserController {
         return userService.getCurrentUser();
     }
 
-    @PatchMapping("/me")
-    @Operation(
-            summary = "Обновление информации об авторизованном пользователе",
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "Информация обновлена",
-                            content = @Content(
-                                    mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema = @Schema(implementation = UpdateUser.class)
-                            )
-                    ),
-                    @ApiResponse(responseCode = "401", description = "Неавторизованный доступ")
-            }
-    )
-    public UpdateUser updateUser(@RequestBody UpdateUser updateUser) {
-        return userService.updateUser(updateUser);
-    }
-
     @PatchMapping(value = "/me/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Обновление аватара авторизованного пользователя",
@@ -90,7 +89,35 @@ public class UserController {
                     @ApiResponse(responseCode = "401", description = "Неавторизованный доступ")
             }
     )
-    public void updateUserImage(@RequestParam("image") MultipartFile image) {
+    @PreAuthorize("isAuthenticated()")
+    @ResponseStatus(HttpStatus.OK)
+    public String updateUserImage(@RequestParam("image") MultipartFile image) throws IOException {
         userService.updateUserImage(image);
+        return "Аватар успешно обновлен";
+    }
+
+
+    @PatchMapping("/me")
+    @Operation(
+            summary = "Обновление информации об авторизованном пользователе",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "OK", content = @Content
+                            (schema = @Schema(implementation = UpdateUser.class))),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized")
+            }
+    )
+    @PreAuthorize("isAuthenticated()")
+    @ResponseStatus(HttpStatus.OK)
+    public Map<String, String> updateUser(@Valid @RequestBody UpdateUser updateUser) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        userService.updateUser(email, updateUser);
+
+        log.info("Информация о пользователе успешно обновлена: {}", email);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Данные пользователя успешно обновлены");
+        return response;
     }
 }

@@ -2,8 +2,8 @@ package ru.skypro.homework.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -11,10 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import ru.skypro.homework.dto.NewPassword;
 import ru.skypro.homework.dto.UpdateUser;
-import ru.skypro.homework.exception.ErrorMessages;
-import ru.skypro.homework.exception.ImageUploadException;
-import ru.skypro.homework.exception.UserNotAuthorizedException;
-import ru.skypro.homework.exception.UserNotFoundException;
+import ru.skypro.homework.exception.*;
 import ru.skypro.homework.mapper.UserMapper;
 import ru.skypro.homework.model.User;
 import ru.skypro.homework.repository.UserRepository;
@@ -28,97 +25,56 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
+    @Value("${file.upload-dir}")
+    private String uploadDir;
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
 
+
     @Override
-    public Long updatePassword(NewPassword newPassword) {
-        log.info("Updating password for current user");
+    public void changePassword(String email, NewPassword newPassword) {
+        log.debug("Начало смены пароля для пользователя: {}", email);
 
-        User currentUser = getCurrentUserFromContext();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> {
+                    log.warn("Пользователь не найден: {}", email);
+                    return new UserNotFoundException("User not found: " + email);
+                });
 
-        if (!passwordEncoder.matches(newPassword.getCurrentPassword(), currentUser.getPassword())) {
-            log.error("Current password is incorrect for user: {}", currentUser.getUsername());
-            throw new IllegalArgumentException(ErrorMessages.INVALID_PASSWORD);
+        log.debug("Пользователь найден: {}", user);
+
+        String currentPassword = newPassword.getCurrentPassword();
+        String encodedPasswordFromDB = user.getPassword();
+
+        log.debug("Введенный текущий пароль: {}", currentPassword);
+        log.debug("Пароль из базы данных: {}", encodedPasswordFromDB);
+
+        if (!passwordEncoder.matches(currentPassword, encodedPasswordFromDB)) {
+            log.warn("Неверный текущий пароль для пользователя: {}", email);
+            throw new InvalidPasswordException("Invalid current password for user: " + email);
         }
 
-        currentUser.setPassword(passwordEncoder.encode(newPassword.getNewPassword()));
-        userRepository.save(currentUser);
-        log.info("Password updated successfully for user: {}", currentUser.getUsername());
+        log.debug("Текущий пароль верен.");
 
-        return currentUser.getId();
+        String newPasswordEncoded = passwordEncoder.encode(newPassword.getNewPassword());
+        log.debug("Новый закодированный пароль: {}", newPasswordEncoded);
+
+        user.setPassword(newPasswordEncoded);
+        userRepository.save(user);
+        log.debug("Новый пароль сохранен в базе данных.");
+
+        log.info("Пароль успешно изменен для пользователя: {}", email);
     }
 
-    @Override
     public User getCurrentUser() {
         log.info("Fetching current user");
-        return getCurrentUserFromContext();
-    }
-
-    @Override
-    public UpdateUser updateUser(UpdateUser updateUser) {
-        log.info("Updating user details");
-
-        User currentUser = getCurrentUserFromContext();
-
-        userMapper.updateUserFromDTO(updateUser, currentUser);
-        userRepository.save(currentUser);
-        log.info("User details updated successfully for user: {}", currentUser.getUsername());
-
-        return updateUser;
-    }
-
-    @Override
-    public void updateUserImage(MultipartFile image) {
-        log.info("Updating user image");
-
         User user = getCurrentUserFromContext();
-
-        try {
-            String imageUrl = saveImage(image);
-            user.setImageUrl(imageUrl);
-            userRepository.save(user);
-
-            log.info("User image updated successfully for user: {}", user.getUsername());
-        } catch (IOException e) {
-            log.error(ErrorMessages.IMAGE_UPLOAD_FAILED, e);
-            throw new ImageUploadException(ErrorMessages.IMAGE_UPLOAD_FAILED, e);
-        }
+        log.info("Fetched user: {}", user);
+        return user;
     }
 
-    private String saveImage(MultipartFile image) throws IOException {
-        if (image == null || image.isEmpty()) {
-            log.error(ErrorMessages.IMAGE_FILE_EMPTY);
-            throw new IllegalArgumentException(ErrorMessages.IMAGE_FILE_EMPTY);
-        }
-
-        String uploadDir = "src/main/resources/static/uploads/images";
-        File dir = new File(uploadDir);
-
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
-
-        String originalFileName = image.getOriginalFilename();
-        String fileExtension = originalFileName != null ? originalFileName.substring(originalFileName.lastIndexOf(".")) : ".jpg";
-        String uniqueFileName = UUID.randomUUID() + fileExtension;
-
-        File file = new File(dir, uniqueFileName);
-
-        image.transferTo(file);
-
-        return "/uploads/images/" + uniqueFileName;
-    }
-
-    /**
-     * Получает текущего аутентифицированного пользователя из контекста безопасности.
-     *
-     * @return текущий пользователь
-     * @throws UserNotAuthorizedException если пользователь не авторизован
-     * @throws UserNotFoundException      если пользователь не найден в базе данных
-     */
     private User getCurrentUserFromContext() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -130,10 +86,66 @@ public class UserServiceImpl implements UserService {
         String username = authentication.getName();
         log.info("Fetching user from database: {}", username);
 
-        return userRepository.findByUsername(username)
+        return userRepository.findByEmail(username)
                 .orElseThrow(() -> {
                     log.error(ErrorMessages.USER_NOT_FOUND);
                     return new UserNotFoundException(ErrorMessages.USER_NOT_FOUND);
                 });
     }
-}
+
+    @Override
+    public UpdateUser updateUser(String email, UpdateUser updateUser) {
+        try {
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> {
+                        log.warn("Пользователь не найден: {}", email);
+                        return new UserNotFoundException("User not found: " + email);
+                    });
+            userMapper.updateUserFromDTO(updateUser, user);
+
+            UpdateUser updatedUser = new UpdateUser();
+            updatedUser.setFirstName(user.getFirstName());
+            updatedUser.setLastName(user.getLastName());
+            updatedUser.setPhone(user.getPhone());
+
+            log.info("Информация о пользователе успешно обновлена: {}", email);
+            return updatedUser;
+        } catch (Exception e) {
+            log.error("Ошибка при обновлении информации о пользователе: {}", email, e);
+            throw new DataIntegrityViolationException("Ошибка при обновлении данных пользователя", e);
+        }
+    }
+
+    @Override
+    public String saveImage(MultipartFile image) throws IOException {
+        File uploadPath = new File(uploadDir).getAbsoluteFile();
+
+        String fileName = UUID.randomUUID() + "." + getFileExtension(image.getOriginalFilename());
+
+        File file = new File(uploadPath, fileName);
+        image.transferTo(file);
+
+        return fileName;
+    }
+
+    private String getFileExtension(String fileName) {
+        if (fileName == null) {
+            return "";
+        }
+        int lastDotIndex = fileName.lastIndexOf(".");
+        return lastDotIndex == -1 ? "" : fileName.substring(lastDotIndex + 1);
+    }
+
+    @Override
+    public void updateUserImage(MultipartFile image) throws IOException {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + email));
+
+        String imagePath = saveImage(image);
+
+        user.setImageUrl(imagePath);
+        userRepository.save(user);
+    }}

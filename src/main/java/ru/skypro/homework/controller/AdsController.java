@@ -64,6 +64,7 @@ public class AdsController {
             }
     )
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("isAuthenticated()")
     public Integer addAd(
             @RequestPart("properties") CreateOrUpdateAd properties,
             @RequestPart("image") MultipartFile image) {
