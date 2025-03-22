@@ -10,15 +10,13 @@ import java.io.IOException;
 
 public interface UserService {
 
-    void changePassword(String username, NewPassword newPassword);
+    void changePassword(NewPassword newPassword);
 
     User getUser();
 
     UpdateUser updateUser(UpdateUser updateUser);
 
-    String updateUserImage(MultipartFile image) throws IOException;
+    void updateUserAvatar(MultipartFile image);
 
-    String saveImage(MultipartFile image) throws IOException;
-
-    UserEntity getAuthenticatedUser();
+    UserEntity getCurrentUser();
 }

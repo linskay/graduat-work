@@ -17,7 +17,6 @@ import ru.skypro.homework.service.AuthService;
 @RequiredArgsConstructor
 @Slf4j
 public class AuthServiceImpl implements AuthService {
-
     private final JdbcTemplate jdbcTemplate;
     private final UserDetailsManager userDetailsManager;
     private final PasswordEncoder passwordEncoder;
@@ -26,21 +25,23 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public boolean login(String username, String password) {
+        log.debug("Попытка входа пользователя: {}", username);
+
         try {
             UserDetails userDetails = userDetailsManager.loadUserByUsername(username);
 
             if (passwordEncoder.matches(password, userDetails.getPassword())) {
-                log.info("User logged in successfully: {}", username);
+                log.info("Успешный вход пользователя: {}", username);
                 return true;
-            } else {
-                log.warn("Invalid password for user: {}", username);
-                return false;
             }
+
+            log.warn("Неверный пароль для пользователя: {}", username);
+            return false;
         } catch (UsernameNotFoundException e) {
-            log.error("User not found: {}", username);
+            log.error("Пользователь не найден: {}", username);
             return false;
         } catch (Exception e) {
-            log.error("Login failed for user: {}", username, e);
+            log.error("Ошибка при входе пользователя: {}", username, e);
             return false;
         }
     }
@@ -48,17 +49,19 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public boolean register(Register register) {
         String email = register.getUsername();
+        log.debug("Попытка регистрации пользователя: {}", email);
+
         if (userRepository.findByEmail(email).isPresent()) {
-            log.warn("User already exists: {}", email);
+            log.warn("Пользователь с email {} уже существует", email);
             return false;
         }
 
         try {
-            log.info("Registering user with data: {}", register);
+            log.info("Регистрация нового пользователя: {}", register);
 
             jdbcTemplate.update(
                     "INSERT INTO users (email, password, enabled, first_name, last_name, phone, role) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    register.getUsername(),
+                    email,
                     passwordEncoder.encode(register.getPassword()),
                     true,
                     register.getFirstName(),
@@ -69,14 +72,14 @@ public class AuthServiceImpl implements AuthService {
 
             jdbcTemplate.update(
                     "INSERT INTO authorities (email, authority) VALUES (?, ?)",
-                    register.getUsername(),
+                    email,
                     "ROLE_" + register.getRole().name()
             );
 
-            log.info("User registered successfully: {}", register.getUsername());
+            log.info("Пользователь успешно зарегистрирован: {}", email);
             return true;
         } catch (Exception e) {
-            log.error("Failed to register user: {}", register.getUsername(), e);
+            log.error("Ошибка при регистрации пользователя: {}", email, e);
             return false;
         }
     }

@@ -50,69 +50,68 @@ public class CommentsController {
 //        response.setResults(comments);
 //        return response;
 //    }
-
-    @PostMapping
-    @Operation(
-            summary = "Добавление комментария к объявлению",
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "OK",
-                            content = @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = Comment.class)
-                            )
-                    ),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
-                    @ApiResponse(responseCode = "404", description = "Not found")
-            }
-    )
-    @ResponseStatus(HttpStatus.CREATED)
-    public Integer addComment(
-            @PathVariable Integer id,
-            @RequestBody CreateOrUpdateComment comment) {
-        Comment createdComment = commentService.addComment(id, comment);
-        return createdComment.getPk();
+//
+//    @PostMapping
+//    @Operation(
+//            summary = "Добавление комментария к объявлению",
+//            responses = {
+//                    @ApiResponse(
+//                            responseCode = "200",
+//                            description = "OK",
+//                            content = @Content(
+//                                    mediaType = "application/json",
+//                                    schema = @Schema(implementation = Comment.class)
+//                            )
+//                    ),
+//                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
+//                    @ApiResponse(responseCode = "404", description = "Not found")
+//            }
+//    )
+//    @ResponseStatus(HttpStatus.CREATED)
+//    public Integer addComment(
+//            @PathVariable Integer id,
+//            @RequestBody CreateOrUpdateComment comment) {
+//        Comment createdComment = commentService.addComment(id, comment);
+//        return createdComment.getPk();
+//    }
+//
+//    @DeleteMapping("/{commentId}")
+//    @Operation(
+//            summary = "Удаление комментария",
+//            responses = {
+//                    @ApiResponse(responseCode = "200", description = "OK"),
+//                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
+//                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+//                    @ApiResponse(responseCode = "404", description = "Not found")
+//            }
+//    )
+//    @ResponseStatus(HttpStatus.NO_CONTENT)
+//    public void deleteComment(
+//            @PathVariable Integer id,
+//            @PathVariable Integer commentId) {
+//        commentService.deleteComment(id, commentId);
+//    }
+//
+//    @PatchMapping("/{commentId}")
+//    @Operation(
+//            summary = "Обновление комментария",
+//            responses = {
+//                    @ApiResponse(
+//                            responseCode = "200",
+//                            description = "OK",
+//                            content = @Content(
+//                                    mediaType = "application/json",
+//                                    schema = @Schema(implementation = Comment.class)
+//                            )
+//                    ),
+//                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
+//                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+//                    @ApiResponse(responseCode = "404", description = "Not found")
+//            }
+//    )
+//    public Comment updateComment(
+//            @PathVariable Integer id,
+//            @PathVariable Integer commentId,
+//            @RequestBody CreateOrUpdateComment updatedComment) {
+//        return commentService.updateComment(id, commentId, updatedComment);
     }
-
-    @DeleteMapping("/{commentId}")
-    @Operation(
-            summary = "Удаление комментария",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "OK"),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden"),
-                    @ApiResponse(responseCode = "404", description = "Not found")
-            }
-    )
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteComment(
-            @PathVariable Integer id,
-            @PathVariable Integer commentId) {
-        commentService.deleteComment(id, commentId);
-    }
-
-    @PatchMapping("/{commentId}")
-    @Operation(
-            summary = "Обновление комментария",
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "OK",
-                            content = @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = Comment.class)
-                            )
-                    ),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden"),
-                    @ApiResponse(responseCode = "404", description = "Not found")
-            }
-    )
-    public Comment updateComment(
-            @PathVariable Integer id,
-            @PathVariable Integer commentId,
-            @RequestBody CreateOrUpdateComment updatedComment) {
-        return commentService.updateComment(id, commentId, updatedComment);
-    }
-}

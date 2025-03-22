@@ -25,7 +25,7 @@
             </column>
 
             <column name="email" type="VARCHAR(100)">
-                <constraints nullable="true" unique="true"/>
+                <constraints nullable="false" unique="true"/>
             </column>
 
             <column name="phone" type="VARCHAR(20)">

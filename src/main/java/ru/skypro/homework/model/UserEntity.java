@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.hibernate.annotations.DynamicUpdate;
 import ru.skypro.homework.dto.Role;
 
@@ -40,6 +41,6 @@ public class UserEntity {
     private Boolean enabled;
 
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @JsonIgnore
+    @ToString.Exclude
     private List<AdEntity> adEntities = new ArrayList<>();
 }
