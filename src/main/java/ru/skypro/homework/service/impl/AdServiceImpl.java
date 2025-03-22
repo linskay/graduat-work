@@ -1,165 +1,226 @@
 package ru.skypro.homework.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import ru.skypro.homework.dto.Ad;
-import ru.skypro.homework.dto.CreateOrUpdateAd;
-import ru.skypro.homework.dto.ExtendedAd;
-import ru.skypro.homework.dto.Role;
+import ru.skypro.homework.dto.*;
 import ru.skypro.homework.exception.AdNotFoundException;
+import ru.skypro.homework.exception.ErrorMessages;
 import ru.skypro.homework.exception.ImageUploadException;
 import ru.skypro.homework.exception.UnauthorizedAccessException;
 import ru.skypro.homework.mapper.AdMapper;
-import ru.skypro.homework.model.User;
+import ru.skypro.homework.model.AdEntity;
+import ru.skypro.homework.model.UserEntity;
 import ru.skypro.homework.repository.AdRepository;
+import ru.skypro.homework.repository.UserRepository;
 import ru.skypro.homework.service.AdService;
 import ru.skypro.homework.service.UserService;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.UUID;
 
+@Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class AdServiceImpl implements AdService {
+    @Value("${file.upload-dir}")
+    private String uploadDir;
 
     private static final Logger logger = LoggerFactory.getLogger(AdServiceImpl.class);
 
     private final AdRepository adRepository;
     private final UserService userService;
     private final AdMapper adMapper;
+    private UserRepository userRepository;
 
     @Override
-    public List<Ad> getAllAds() {
+    public Ads getAllAds() {
         logger.info("Fetching all ads");
-        return adMapper.adsToAdDTOs(adRepository.findAll());
+
+        List<AdEntity> adEntities = adRepository.findAll();
+        Ads response = new Ads();
+
+        response.setCount(adEntities.size());
+        response.setResults(adMapper.adsToAdDTOs(adEntities));
+        return response;
+    }
+    /**
+     * Метод для сохранения изображения.
+     *
+     * @param image Загруженное изображение.
+     * @return Имя сохраненного файла.
+     * @throws IOException Если произошла ошибка при сохранении файла.
+     */
+    public String saveImage(MultipartFile image) throws IOException {
+        Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+        String fileName = UUID.randomUUID().toString() + "." + getFileExtension(image.getOriginalFilename());
+
+        Path filePath = uploadPath.resolve(fileName);
+        Files.copy(image.getInputStream(), filePath);
+
+        return fileName;
+    }
+
+    /**
+     * Метод для получения расширения файла.
+     *
+     * @param fileName Оригинальное имя файла.
+     * @return Расширение файла.
+     */
+    private String getFileExtension(String fileName) {
+        if (fileName == null || fileName.isEmpty()) {
+            return "";
+        }
+        int lastDotIndex = fileName.lastIndexOf(".");
+        return lastDotIndex == -1 ? "" : fileName.substring(lastDotIndex + 1);
     }
 
     @Override
-    public Ad addAd(CreateOrUpdateAd properties, MultipartFile image) {
-        User currentUser = userService.getCurrentUser();
-        logger.info("Adding new ad by user: {}", currentUser.getUsername());
-
-        ru.skypro.homework.model.Ad ad = adMapper.createOrUpdateAdDTOToAd(properties);
-        ad.setAuthor(currentUser);
-
-        try {
-            ad.setImage(Arrays.toString(image.getBytes()));
-        } catch (IOException e) {
-            logger.error("Failed to upload image", e);
-            throw new ImageUploadException("Ошибка при загрузке изображения", e);
+    public Ad addAd(CreateOrUpdateAd createOrUpdateAd, MultipartFile image, UserEntity userEntity) throws IOException {
+        if (image == null || image.isEmpty()) {
+            throw new IllegalArgumentException("Изображение не предоставлено");
         }
 
-        ru.skypro.homework.model.Ad savedAd = adRepository.save(ad);
-        logger.info("Ad added successfully with id: {}", savedAd.getId());
+        String fileName = saveImage(image);
 
-        return adMapper.adToAdDTO(savedAd);
+        AdEntity adEntity = adMapper.createOrUpdateAdDTOToAd(createOrUpdateAd);
+        adEntity.setAuthor(userEntity);
+        adEntity.setImage("/uploads/images/" + fileName);
+
+        adEntity = adRepository.save(adEntity);
+
+        log.info("Объявление успешно создано: {}", adEntity.getTitle());
+        return adMapper.adToAdDTO(adEntity);
     }
+
 
     @Override
     public ExtendedAd getAd(Integer id) {
         logger.info("Fetching ad with id: {}", id);
-        ru.skypro.homework.model.Ad ad = adRepository.findById(id)
+
+        if (id == null) {
+            logger.error("Ad ID is null");
+            throw new IllegalArgumentException("Ad ID cannot be null");
+        }
+
+        AdEntity adEntity = adRepository.findById(id)
                 .orElseThrow(() -> {
-                    logger.error("Ad not found with id: {}", id);
-                    return new AdNotFoundException("Объявление не найдено");
+                    logger.error(ErrorMessages.AD_NOT_FOUND);
+                    return new AdNotFoundException(ErrorMessages.AD_NOT_FOUND);
                 });
-        return adMapper.adToExtendedAdDTO(ad);
+
+        return adMapper.adToExtendedAdDTO(adEntity);
     }
 
     @Override
     public void removeAd(Integer id) {
         logger.info("Removing ad with id: {}", id);
-        ru.skypro.homework.model.Ad ad = adRepository.findById(id)
+        AdEntity adEntity = adRepository.findById(id)
                 .orElseThrow(() -> {
-                    logger.error("Ad not found with id: {}", id);
-                    return new AdNotFoundException("Объявление не найдено");
+                    logger.error(ErrorMessages.AD_NOT_FOUND);
+                    return new AdNotFoundException(ErrorMessages.AD_NOT_FOUND);
                 });
 
-        User currentUser = userService.getCurrentUser();
+        UserEntity currentUserEntity = userService.getAuthenticatedUser();
 
-        if (!ad.getAuthor().equals(currentUser) && !isAdmin(currentUser)) {
-            logger.error("Unauthorized access to delete ad by user: {}", currentUser.getUsername());
-            throw new UnauthorizedAccessException("У вас нет прав для удаления этого объявления");
+        if (!adEntity.getAuthor().equals(currentUserEntity) && !isAdmin(currentUserEntity)) {
+            logger.error(ErrorMessages.UNAUTHORIZED_ACCESS);
+            throw new UnauthorizedAccessException(ErrorMessages.UNAUTHORIZED_ACCESS);
         }
 
-        adRepository.delete(ad);
+        adRepository.delete(adEntity);
         logger.info("Ad removed successfully with id: {}", id);
     }
 
     @Override
     public Ad updateAd(Integer id, CreateOrUpdateAd updatedAd) {
         logger.info("Updating ad with id: {}", id);
-        ru.skypro.homework.model.Ad ad = adRepository.findById(id)
+        AdEntity adEntity = adRepository.findById(id)
                 .orElseThrow(() -> {
-                    logger.error("Ad not found with id: {}", id);
-                    return new AdNotFoundException("Объявление не найдено");
+                    logger.error(ErrorMessages.AD_NOT_FOUND);
+                    return new AdNotFoundException(ErrorMessages.AD_NOT_FOUND);
                 });
 
-        User currentUser = userService.getCurrentUser();
+        UserEntity currentUserEntity = userService.getAuthenticatedUser();
 
-        if (!ad.getAuthor().equals(currentUser) && !isAdmin(currentUser)) {
-            logger.error("Unauthorized access to update ad by user: {}", currentUser.getUsername());
-            throw new UnauthorizedAccessException("У вас нет прав для редактирования этого объявления");
+        if (!adEntity.getAuthor().equals(currentUserEntity) && !isAdmin(currentUserEntity)) {
+            logger.error(ErrorMessages.UNAUTHORIZED_ACCESS);
+            throw new UnauthorizedAccessException(ErrorMessages.UNAUTHORIZED_ACCESS);
         }
 
-        ru.skypro.homework.model.Ad updatedEntity = adMapper.createOrUpdateAdDTOToAd(updatedAd);
-        updatedEntity.setId(ad.getId());
-        updatedEntity.setAuthor(ad.getAuthor());
-        updatedEntity.setImage(ad.getImage());
+        AdEntity updatedEntity = adMapper.createOrUpdateAdDTOToAd(updatedAd);
+        updatedEntity.setId(adEntity.getId());
+        updatedEntity.setAuthor(adEntity.getAuthor());
+        updatedEntity.setImage(adEntity.getImage());
 
-        ru.skypro.homework.model.Ad savedAd = adRepository.save(updatedEntity);
+        AdEntity savedAdEntity = adRepository.save(updatedEntity);
         logger.info("Ad updated successfully with id: {}", id);
 
-        return adMapper.adToAdDTO(savedAd);
+        return adMapper.adToAdDTO(savedAdEntity);
     }
 
     @Override
     public List<Ad> getAdsMe() {
-        User currentUser = userService.getCurrentUser();
-        logger.info("Fetching ads for user: {}", currentUser.getUsername());
+        UserEntity currentUserEntity = userService.getAuthenticatedUser();
+        logger.info("Fetching ads for user: {}", currentUserEntity.getEmail());
 
-        return adMapper.adsToAdDTOs(adRepository.findByAuthor(currentUser));
+        return adMapper.adsToAdDTOs(adRepository.findByAuthor(currentUserEntity));
     }
 
     @Override
     public byte[] updateImage(Integer id, MultipartFile image) {
         logger.info("Updating image for ad with id: {}", id);
-        ru.skypro.homework.model.Ad ad = adRepository.findById(id)
+        AdEntity adEntity = adRepository.findById(id)
                 .orElseThrow(() -> {
-                    logger.error("Ad not found with id: {}", id);
-                    return new AdNotFoundException("Объявление не найдено");
+                    logger.error(ErrorMessages.AD_NOT_FOUND);
+                    return new AdNotFoundException(ErrorMessages.AD_NOT_FOUND);
                 });
 
-        User currentUser = userService.getCurrentUser();
+        UserEntity currentUserEntity = userService.getAuthenticatedUser();
 
-        if (!ad.getAuthor().equals(currentUser) && !isAdmin(currentUser)) {
-            logger.error("Unauthorized access to update image by user: {}", currentUser.getUsername());
-            throw new UnauthorizedAccessException("У вас нет прав для обновления изображения этого объявления");
+        if (!adEntity.getAuthor().equals(currentUserEntity) && !isAdmin(currentUserEntity)) {
+            logger.error(ErrorMessages.UNAUTHORIZED_ACCESS);
+            throw new UnauthorizedAccessException(ErrorMessages.UNAUTHORIZED_ACCESS);
+        }
+
+        if (image == null || image.isEmpty()) {
+            logger.error(ErrorMessages.IMAGE_FILE_EMPTY);
+            throw new ImageUploadException(ErrorMessages.IMAGE_FILE_EMPTY);
         }
 
         try {
-            byte[] imageBytes = image.getBytes();
-            ad.setImage(Arrays.toString(imageBytes));
-            adRepository.save(ad);
+            String imagePath = saveImage(image);
+            adEntity.setImage(imagePath);
+            adRepository.save(adEntity);
             logger.info("Image updated successfully for ad with id: {}", id);
-            return imageBytes;
+            return image.getBytes();
         } catch (IOException e) {
-            logger.error("Failed to upload image", e);
-            throw new ImageUploadException("Ошибка при загрузке изображения", e);
+            logger.error(ErrorMessages.IMAGE_UPLOAD_FAILED, e);
+            throw new ImageUploadException(ErrorMessages.IMAGE_UPLOAD_FAILED, e);
         }
     }
+
 
     /**
      * Проверяет, является ли пользователь админом.
      *
-     * @param user пользователь
+     * @param userEntity пользователь
      * @return true, если пользователь — админ, иначе false
      */
-    private boolean isAdmin(User user) {
-        return user.getRole() == Role.ADMIN;
+    private boolean isAdmin(UserEntity userEntity) {
+        return userEntity.getRole() == Role.ADMIN;
     }
 }

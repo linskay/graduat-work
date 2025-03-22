@@ -2,141 +2,172 @@ package ru.skypro.homework.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import ru.skypro.homework.dto.NewPassword;
 import ru.skypro.homework.dto.UpdateUser;
-import ru.skypro.homework.exception.ImageUploadException;
-import ru.skypro.homework.exception.UserNotAuthorizedException;
+import ru.skypro.homework.dto.User;
+import ru.skypro.homework.exception.ErrorMessages;
+import ru.skypro.homework.exception.InvalidPasswordException;
 import ru.skypro.homework.exception.UserNotFoundException;
 import ru.skypro.homework.mapper.UserMapper;
-import ru.skypro.homework.model.User;
+import ru.skypro.homework.model.UserEntity;
 import ru.skypro.homework.repository.UserRepository;
 import ru.skypro.homework.service.UserService;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.io.File;
 import java.io.IOException;
 import java.util.UUID;
 
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
+    @Value("${file.upload-dir}")
+    private String uploadDir;
 
-    private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
 
-    @Override
-    public Long updatePassword(NewPassword newPassword) {
-        log.info("Updating password for current user");
+    @PersistenceContext
+    private EntityManager entityManager;
 
-        User currentUser = getCurrentUserFromContext();
+    /**
+     * Метод для получения текущего авторизованного пользователя.
+     *
+     * @return Экземпляр пользователя.
+     * @throws UserNotFoundException Если пользователь не найден.
+     */
+    public UserEntity getAuthenticatedUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
 
-        if (!passwordEncoder.matches(newPassword.getCurrentPassword(), currentUser.getPassword())) {
-            log.error("Current password is incorrect for user: {}", currentUser.getUsername());
-            throw new IllegalArgumentException("Текущий пароль неверный");
-        }
-
-        currentUser.setPassword(passwordEncoder.encode(newPassword.getNewPassword()));
-        userRepository.save(currentUser);
-        log.info("Password updated successfully for user: {}", currentUser.getUsername());
-
-        return currentUser.getId();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException(ErrorMessages.USER_NOT_FOUND + email));
     }
 
     @Override
-    public User getCurrentUser() {
-        log.info("Fetching current user");
-        return getCurrentUserFromContext();
+    public void changePassword(String email, NewPassword newPassword) {
+        log.debug("Начало смены пароля для пользователя: {}", email);
+
+        UserEntity userEntity = userRepository.findByEmail(email)
+                .orElseThrow(() -> {
+                    log.warn("Пользователь не найден: {}", email);
+                    return new UserNotFoundException(ErrorMessages.USER_NOT_FOUND);
+                });
+
+        log.debug("Пользователь найден: {}", userEntity);
+
+        String currentPassword = newPassword.getCurrentPassword();
+        String encodedPasswordFromDB = userEntity.getPassword();
+
+        if (!passwordEncoder.matches(currentPassword, encodedPasswordFromDB)) {
+            log.warn("Неверный текущий пароль для пользователя: {}", email);
+            throw new InvalidPasswordException("Invalid current password for user: " + email);
+        }
+
+        String newPasswordEncoded = passwordEncoder.encode(newPassword.getNewPassword());
+
+        userEntity.setPassword(newPasswordEncoded);
+        userRepository.save(userEntity);
+
+        log.info("Пароль успешно изменен для пользователя: {}", email);
+    }
+
+    @Override
+    public User getUser() {
+        try {
+            UserEntity userEntity = getAuthenticatedUser();
+
+            log.debug("Получен пользователь: {}", userEntity);
+
+            return userMapper.toUserDTO(userEntity);
+        } catch (Exception e) {
+            log.error("Ошибка при получении информации о пользователе: {}", e.getMessage());
+            throw new RuntimeException("Ошибка при получении данных пользователя", e);
+        }
     }
 
     @Override
     public UpdateUser updateUser(UpdateUser updateUser) {
-        log.info("Updating user details");
+        try {
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            UserEntity userEntity = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new UserNotFoundException(ErrorMessages.USER_NOT_FOUND + email));
 
-        User currentUser = getCurrentUserFromContext();
+            userMapper.updateUserFromDTO(updateUser, userEntity);
 
-        userMapper.updateUserFromDTO(updateUser, currentUser);
-        userRepository.save(currentUser);
-        log.info("User details updated successfully for user: {}", currentUser.getUsername());
+            log.debug("Обновленный пользователь перед сохранением: {}", userEntity);
+            userRepository.save(userEntity);
 
-        return updateUser;
+            UpdateUser updatedUserDTO = userMapper.toUpdateUser(userEntity);
+            log.debug("Обновленный пользователь, возвращаемый клиенту: {}", updatedUserDTO);
+            return updatedUserDTO;
+
+        } catch (Exception e) {
+            log.error("Ошибка при обновлении информации о пользователе: {}", e);
+            throw new RuntimeException("Ошибка при обновлении данных пользователя", e);
+        }
     }
 
     @Override
-    public void updateUserImage(MultipartFile image) {
-        logger.info("Updating user image");
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UserNotFoundException("Пользователь не найден"));
-
-        try {
-            String imageUrl = saveImage(image);
-
-            user.setImageUrl(imageUrl);
-            userRepository.save(user);
-
-            logger.info("User image updated successfully for user: {}", username);
-        } catch (IOException e) {
-            logger.error("Ошибка при сохранении изображения", e);
-            throw new ImageUploadException("Ошибка при сохранении изображения", e);
-        }
-    }
-
-    private String saveImage(MultipartFile image) throws IOException {
-        if (image.isEmpty()) {
-            throw new IllegalArgumentException("Файл изображения пуст");
+    public String updateUserImage(MultipartFile image) throws IOException {
+        if (image == null || image.isEmpty()) {
+            throw new IllegalArgumentException("Изображение не предоставлено");
         }
 
-        String uploadDir = System.getProperty("user.dir") + "/src/main/resources/static/uploads/images";
-        File dir = new File(uploadDir);
+        UserEntity userEntity = getAuthenticatedUser();
 
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
+        String fileName = saveImage(image);
 
-        String originalFileName = image.getOriginalFilename();
-        String fileExtension = originalFileName != null ? originalFileName.substring(originalFileName.lastIndexOf(".")) : ".jpg";
-        String uniqueFileName = UUID.randomUUID() + fileExtension;
+        userEntity.setImageUrl("/uploads/images/" + fileName);
+        userRepository.save(userEntity);
 
-        File file = new File(dir, uniqueFileName);
-
-        image.transferTo(file);
-
-        return "/uploads/images/" + uniqueFileName;
+        return "Аватар успешно обновлен";
     }
 
     /**
-     * Получает текущего аутентифицированного пользователя из контекста безопасности.
+     * Метод для сохранения изображения в файловой системе.
      *
-     * @return текущий пользователь
-     * @throws UserNotAuthorizedException если пользователь не авторизован
-     * @throws UserNotFoundException      если пользователь не найден в базе данных
+     * @param image Загруженное изображение.
+     * @return Имя сохраненного файла.
+     * @throws IOException Если произошла ошибка при сохранении файла.
      */
-    private User getCurrentUserFromContext() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    public String saveImage(MultipartFile image) throws IOException {
+        File uploadPath = new File(uploadDir).getAbsoluteFile();
 
-        if (authentication == null || !authentication.isAuthenticated()) {
-            log.error("User not authorized");
-            throw new UserNotAuthorizedException("Пользователь не авторизован");
+        if (!uploadPath.exists()) {
+            uploadPath.mkdirs();
         }
 
-        String username = authentication.getName();
+        String fileName = UUID.randomUUID() + "." + getFileExtension(image.getOriginalFilename());
 
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> {
-                    log.error("User not found in database: {}", username);
-                    return new UserNotFoundException("Пользователь не найден в базе данных");
-                });
+        File file = new File(uploadPath, fileName);
+        image.transferTo(file);
+
+        return fileName;
+    }
+
+    /**
+     * Метод для получения расширения файла.
+     *
+     * @param fileName Оригинальное имя файла.
+     * @return Расширение файла.
+     */
+    private String getFileExtension(String fileName) {
+        if (fileName == null) {
+            return "";
+        }
+        int lastDotIndex = fileName.lastIndexOf(".");
+        return lastDotIndex == -1 ? "" : fileName.substring(lastDotIndex + 1);
     }
 }

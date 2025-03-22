@@ -1,19 +1,25 @@
 package ru.skypro.homework.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 
+@AllArgsConstructor
+@NoArgsConstructor
 @Data
 @Schema(description = "DTO для регистрации нового пользователя")
 public class Register {
 
-    @Schema(description = "Логин", example = "user123")
+    @Schema(description = "Логин пользователя", example = "ivan@example.com")
     @NotBlank(message = "Логин не может быть пустым")
     @Size(min = 4, max = 32, message = "Логин должен содержать от 4 до 32 символов")
+    @Email(message = "Email должен быть корректным адресом электронной почты")
     private String username;
 
     @Schema(description = "Пароль пользователя", example = "password123")
@@ -21,12 +27,12 @@ public class Register {
     @Size(min = 8, max = 16, message = "Пароль должен содержать от 8 до 16 символов")
     private String password;
 
-    @Schema(description = "Имя пользователя", example = "Иван")
+    @Schema(description = "Имя пользователя", example = "Олег")
     @NotBlank(message = "Имя не может быть пустым")
     @Size(min = 2, max = 16, message = "Имя должно содержать от 2 до 16 символов")
     private String firstName;
 
-    @Schema(description = "Фамилия пользователя", example = "Иванов")
+    @Schema(description = "Фамилия пользователя", example = "Олегов")
     @NotBlank(message = "Фамилия не может быть пустой")
     @Size(min = 2, max = 16, message = "Фамилия должна содержать от 2 до 16 символов")
     private String lastName;

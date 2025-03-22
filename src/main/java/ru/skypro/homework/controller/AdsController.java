@@ -8,14 +8,18 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ru.skypro.homework.dto.Ad;
 import ru.skypro.homework.dto.Ads;
 import ru.skypro.homework.dto.CreateOrUpdateAd;
 import ru.skypro.homework.dto.ExtendedAd;
+import ru.skypro.homework.model.UserEntity;
 import ru.skypro.homework.service.AdService;
+import ru.skypro.homework.service.UserService;
 
 import java.util.List;
 
@@ -28,6 +32,7 @@ import java.util.List;
 public class AdsController {
 
     private final AdService adService;
+    private UserService userService;
 
     @GetMapping
     @Operation(
@@ -44,34 +49,32 @@ public class AdsController {
             }
     )
     public Ads getAllAds() {
-        List<Ad> ads = adService.getAllAds();
-        Ads response = new Ads();
-        response.setCount(ads.size());
-        response.setResults(ads);
-        return response;
+        return adService.getAllAds();
     }
 
-    @PostMapping(consumes = "multipart/form-data")
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Добавление объявления",
             responses = {
-                    @ApiResponse(
-                            responseCode = "201",
-                            description = "Created",
-                            content = @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = Ad.class)
-                            )
-                    ),
+                    @ApiResponse(responseCode = "201", description = "Объявление успешно создано", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Ad.class))),
                     @ApiResponse(responseCode = "401", description = "Unauthorized")
             }
     )
-    @ResponseStatus(HttpStatus.CREATED)
-    public Integer addAd(
-            @RequestPart("properties") CreateOrUpdateAd properties,
-            @RequestPart("image") MultipartFile image) {
-        Ad ad = adService.addAd(properties, image);
-        return ad.getPk();
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Ad> addAd(@RequestPart("properties") CreateOrUpdateAd createOrUpdateAd, @RequestPart("image") MultipartFile image) {
+        try {
+            // Получаем текущего авторизованного пользователя
+            UserEntity userEntity = userService.getAuthenticatedUser();
+
+            // Сохраняем изображение и создаем объявление
+            Ad ad = adService.addAd(createOrUpdateAd, image, userEntity);
+
+            log.info("Объявление успешно создано");
+            return ResponseEntity.status(HttpStatus.CREATED).body(ad);
+        } catch (Exception e) {
+            log.error("Ошибка при создании объявления: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(null);
+        }
     }
 
     @GetMapping("/{id}")
@@ -90,6 +93,7 @@ public class AdsController {
                     @ApiResponse(responseCode = "404", description = "Not found")
             }
     )
+    @PreAuthorize("isAuthenticated()")
     public ExtendedAd getAd(@PathVariable Integer id) {
         return adService.getAd(id);
     }

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.skypro.homework.dto.Comment;
 import ru.skypro.homework.dto.Comments;
 import ru.skypro.homework.dto.CreateOrUpdateComment;
+import ru.skypro.homework.model.CommentEntity;
 import ru.skypro.homework.service.CommentService;
 
 import java.util.List;
@@ -26,29 +27,29 @@ public class CommentsController {
 
     private final CommentService commentService;
 
-    @GetMapping
-    @Operation(
-            summary = "Получение комментариев объявления",
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "OK",
-                            content = @Content(
-                                    mediaType = "application/json",
-                                    schema = @Schema(implementation = Comments.class)
-                            )
-                    ),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
-                    @ApiResponse(responseCode = "404", description = "Not found")
-            }
-    )
-    public Comments getComments(@PathVariable Integer id) {
-        List<Comment> comments = commentService.getComments(id);
-        Comments response = new Comments();
-        response.setCount(comments.size());
-        response.setResults(comments);
-        return response;
-    }
+//    @GetMapping
+//    @Operation(
+//            summary = "Получение комментариев объявления",
+//            responses = {
+//                    @ApiResponse(
+//                            responseCode = "200",
+//                            description = "OK",
+//                            content = @Content(
+//                                    mediaType = "application/json",
+//                                    schema = @Schema(implementation = Comments.class)
+//                            )
+//                    ),
+//                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
+//                    @ApiResponse(responseCode = "404", description = "Not found")
+//            }
+//    )
+//    public Comments getComments(@PathVariable Integer id) {
+//        List<CommentEntity> comments = commentService.getComments(id);
+//        Comments response = new Comments();
+//        response.setCount(comments.size());
+//        response.setResults(comments);
+//        return response;
+//    }
 
     @PostMapping
     @Operation(

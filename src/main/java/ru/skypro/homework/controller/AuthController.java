@@ -16,6 +16,8 @@ import ru.skypro.homework.dto.Login;
 import ru.skypro.homework.dto.Register;
 import ru.skypro.homework.service.AuthService;
 
+import javax.validation.Valid;
+
 @Slf4j
 @CrossOrigin(value = "http://localhost:3000")
 @RestController
@@ -61,15 +63,28 @@ public class AuthController {
                             responseCode = "400",
                             description = "Некорректные данные для регистрации",
                             content = @Content()
+                    ),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "Внутренняя ошибка сервера",
+                            content = @Content()
                     )
             }
     )
-    public ResponseEntity<?> register(@RequestBody Register register) {
+    public ResponseEntity<?> register(@Valid @RequestBody Register register) {
         log.info("Запрос на регистрацию пользователя: {}", register.getUsername());
-        if (authService.register(register)) {
-            return ResponseEntity.status(HttpStatus.CREATED).build();
-        } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+
+        try {
+            if (authService.register(register)) {
+                log.info("Пользователь успешно зарегистрирован: {}", register.getUsername());
+                return ResponseEntity.status(HttpStatus.CREATED).build();
+            } else {
+                log.warn("Не удалось зарегистрировать пользователя: {}", register.getUsername());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            }
+        } catch (Exception e) {
+            log.error("Ошибка при регистрации пользователя: {}", register.getUsername(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }

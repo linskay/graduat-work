@@ -1,19 +1,20 @@
 package ru.skypro.homework.mapper;
 
+import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
-import org.mapstruct.factory.Mappers;
 import ru.skypro.homework.dto.Comment;
 import ru.skypro.homework.dto.CreateOrUpdateComment;
+import ru.skypro.homework.model.AdEntity;
+import ru.skypro.homework.model.CommentEntity;
+import ru.skypro.homework.model.UserEntity;
 
 import java.time.Instant;
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {UserMapper.class, AdMapper.class})
 public interface CommentMapper {
-
-    CommentMapper INSTANCE = Mappers.getMapper(CommentMapper.class);
 
     @Named("mapInstantToEpochMillis")
     default Long mapInstantToEpochMillis(Instant instant) {
@@ -25,13 +26,20 @@ public interface CommentMapper {
     @Mapping(source = "author.firstName", target = "authorUsername")
     @Mapping(source = "author.imageUrl", target = "authorImage")
     @Mapping(source = "createdAt", target = "createdAt", qualifiedByName = "mapInstantToEpochMillis")
-    Comment commentToCommentDTO(ru.skypro.homework.model.Comment comment);
+  //  @Mapping(source = "adEntity.id", target = "ad")
+    Comment commentToCommentDTO(CommentEntity commentEntity);
 
-    List<Comment> commentsToCommentDTOs(List<ru.skypro.homework.model.Comment> comments);
+    List<Comment> commentsToCommentDTOs(List<CommentEntity> commentEntities);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "author", ignore = true)
-    @Mapping(target = "ad", ignore = true)
-    ru.skypro.homework.model.Comment createOrUpdateCommentDTOToComment(CreateOrUpdateComment dto);
+ //   @Mapping(target = "ad", ignore = true)
+    CommentEntity createOrUpdateCommentDTOToComment(CreateOrUpdateComment dto);
+//
+//    @Mapping(target = "id", ignore = true)
+//    @Mapping(target = "createdAt", ignore = true)
+//    @Mapping(target = "author", ignore = true)
+//    @Mapping(target = "adEntity", ignore = true)
+//    CommentEntity createOrUpdateCommentDTOToComment(CreateOrUpdateComment dto, @Context UserEntity author, @Context AdEntity adEntity);
 }

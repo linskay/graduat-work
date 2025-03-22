@@ -7,7 +7,7 @@
 
     <changeSet id="1" author="Lins">
         <createTable tableName="authorities">
-            <column name="username" type="VARCHAR(50)">
+            <column name="email" type="VARCHAR(50)">
                 <constraints nullable="false"/>
             </column>
             <column name="authority" type="VARCHAR(50)">
@@ -15,12 +15,19 @@
             </column>
         </createTable>
 
+        <addPrimaryKey constraintName="pk_authorities" tableName="authorities" columnNames="email, authority"/>
+
         <addForeignKeyConstraint
                 baseTableName="authorities"
-                baseColumnNames="username"
+                baseColumnNames="email"
                 referencedTableName="users"
-                referencedColumnNames="username"
+                referencedColumnNames="email"
                 constraintName="fk_authorities_users"
                 onDelete="CASCADE"/>
+
+        <rollback>
+            <dropTable ifExists="true" tableName="authorities"/>
+        </rollback>
     </changeSet>
+
 </databaseChangeLog>
