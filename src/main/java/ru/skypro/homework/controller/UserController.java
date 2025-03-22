@@ -19,12 +19,12 @@ import org.springframework.web.multipart.MultipartFile;
 import ru.skypro.homework.dto.NewPassword;
 import ru.skypro.homework.dto.UpdateUser;
 import ru.skypro.homework.dto.User;
+import ru.skypro.homework.model.UserEntity;
+import ru.skypro.homework.service.FileService;
 import ru.skypro.homework.service.UserService;
+import ru.skypro.homework.mapper.UserMapper;
 
 import javax.validation.Valid;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 @Slf4j
 @CrossOrigin(value = "http://localhost:3000")
@@ -35,6 +35,8 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
+    private final FileService fileService;
+    private UserMapper userMapper;
 
     @PostMapping("/set_password") //toDo тесты - метод работает через раз: 500/200
     @Operation(
@@ -77,11 +79,17 @@ public class UserController {
                     )
             }
     )
-    public ru.skypro.homework.model.User getUser() {
-        return userService.getCurrentUser();
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<User> getUser() {
+        log.info("Начало получения информации о пользователе");
+
+        User user = userService.getUser();
+
+        log.info("Информация о пользователе успешно получена");
+        return ResponseEntity.ok(user);
     }
 
-    @PatchMapping(value = "/me/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PatchMapping(value = "/me/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE) //toDo на фронте не отображается
     @Operation(
             summary = "Обновление аватара авторизованного пользователя",
             responses = {
@@ -90,34 +98,38 @@ public class UserController {
             }
     )
     @PreAuthorize("isAuthenticated()")
-    @ResponseStatus(HttpStatus.OK)
-    public String updateUserImage(@RequestParam("image") MultipartFile image) throws IOException {
-        userService.updateUserImage(image);
-        return "Аватар успешно обновлен";
-    }
+    public ResponseEntity<User> updateUserImage(@RequestPart("image") MultipartFile image) {
+        try {
+            userService.saveImage(image);
+            
+            UserEntity userEntity = userService.getAuthenticatedUser();
+            
+            User userDTO = userMapper.toUserDTO(userEntity);
 
+            return ResponseEntity.ok(userDTO);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
 
     @PatchMapping("/me")
     @Operation(
             summary = "Обновление информации об авторизованном пользователе",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "OK", content = @Content
-                            (schema = @Schema(implementation = UpdateUser.class))),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized")
-            }
+                    @ApiResponse(responseCode = "200", description = "OK", content = @Content(mediaType = "application/json", schema = @Schema(implementation = UpdateUser.class))),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "404", description = "Not Found")
+            },
+            tags = "Пользователи"
     )
     @PreAuthorize("isAuthenticated()")
-    @ResponseStatus(HttpStatus.OK)
-    public Map<String, String> updateUser(@Valid @RequestBody UpdateUser updateUser) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
+    public ResponseEntity<UpdateUser> updateUser(@RequestBody UpdateUser updateUser) {
+        log.info("Начало обновления информации о пользователе");
 
-        userService.updateUser(email, updateUser);
+        UpdateUser updatedUser = userService.updateUser(updateUser);
 
-        log.info("Информация о пользователе успешно обновлена: {}", email);
-
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Данные пользователя успешно обновлены");
-        return response;
+        log.info("Информация о пользователе успешно обновлена");
+        return ResponseEntity.ok(updateUser);
     }
 }

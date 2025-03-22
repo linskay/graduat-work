@@ -4,7 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import ru.skypro.homework.dto.*;
 import ru.skypro.homework.exception.AdNotFoundException;
@@ -12,8 +14,10 @@ import ru.skypro.homework.exception.ErrorMessages;
 import ru.skypro.homework.exception.ImageUploadException;
 import ru.skypro.homework.exception.UnauthorizedAccessException;
 import ru.skypro.homework.mapper.AdMapper;
-import ru.skypro.homework.model.User;
+import ru.skypro.homework.model.AdEntity;
+import ru.skypro.homework.model.UserEntity;
 import ru.skypro.homework.repository.AdRepository;
+import ru.skypro.homework.repository.UserRepository;
 import ru.skypro.homework.service.AdService;
 import ru.skypro.homework.service.UserService;
 
@@ -22,66 +26,86 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class AdServiceImpl implements AdService {
+    @Value("${file.upload-dir}")
+    private String uploadDir;
 
     private static final Logger logger = LoggerFactory.getLogger(AdServiceImpl.class);
-    private static final String IMAGE_UPLOAD_DIR = "src/main/resources/static/uploads/images/ads/";
 
     private final AdRepository adRepository;
     private final UserService userService;
     private final AdMapper adMapper;
+    private UserRepository userRepository;
 
     @Override
     public Ads getAllAds() {
         logger.info("Fetching all ads");
-        List<ru.skypro.homework.model.Ad> ads = adRepository.findAll();
+
+        List<AdEntity> adEntities = adRepository.findAll();
         Ads response = new Ads();
-        response.setCount(ads.size());
-        response.setResults(adMapper.adsToAdDTOs(ads));
+
+        response.setCount(adEntities.size());
+        response.setResults(adMapper.adsToAdDTOs(adEntities));
         return response;
+    }
+    /**
+     * Метод для сохранения изображения.
+     *
+     * @param image Загруженное изображение.
+     * @return Имя сохраненного файла.
+     * @throws IOException Если произошла ошибка при сохранении файла.
+     */
+    public String saveImage(MultipartFile image) throws IOException {
+        Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+        String fileName = UUID.randomUUID().toString() + "." + getFileExtension(image.getOriginalFilename());
+
+        Path filePath = uploadPath.resolve(fileName);
+        Files.copy(image.getInputStream(), filePath);
+
+        return fileName;
+    }
+
+    /**
+     * Метод для получения расширения файла.
+     *
+     * @param fileName Оригинальное имя файла.
+     * @return Расширение файла.
+     */
+    private String getFileExtension(String fileName) {
+        if (fileName == null || fileName.isEmpty()) {
+            return "";
+        }
+        int lastDotIndex = fileName.lastIndexOf(".");
+        return lastDotIndex == -1 ? "" : fileName.substring(lastDotIndex + 1);
     }
 
     @Override
-    public Ad addAd(CreateOrUpdateAd properties, MultipartFile image) {
-        try {
-            // Получаем текущего пользователя
-            User currentUser = userService.getCurrentUser();
-                 log.info("Adding new ad by user: {}", currentUser.getEmail());
-
-            // Проверяем, что изображение не пустое
-            if (image == null || image.isEmpty()) {
-                log.error(ErrorMessages.IMAGE_FILE_EMPTY);
-                throw new ImageUploadException(ErrorMessages.IMAGE_FILE_EMPTY);
-            }
-
-            // Проверяем формат изображения
-            if (!isImageFile(image)) {
-                log.error(ErrorMessages.IMAGE_FILE_INVALID_FORMAT);
-                throw new ImageUploadException(ErrorMessages.IMAGE_FILE_INVALID_FORMAT);
-            }
-
-            // Создаем объявление
-            ru.skypro.homework.model.Ad ad = adMapper.createOrUpdateAdDTOToAd(properties);
-            ad.setAuthor(currentUser); // Устанавливаем автора
-
-            // Сохраняем изображение
-            String imagePath = saveImage(image);
-            ad.setImage(imagePath);
-
-            // Сохраняем объявление в базе данных
-            ru.skypro.homework.model.Ad savedAd = adRepository.save(ad);
-            log.info("Ad added successfully with id: {}", savedAd.getId());
-
-            return adMapper.adToAdDTO(savedAd);
-        } catch (Exception e) {
-            log.error("Error while adding ad: {}", e.getMessage(), e);
-            throw new RuntimeException("Произошла внутренняя ошибка сервера", e);
+    public Ad addAd(CreateOrUpdateAd createOrUpdateAd, MultipartFile image, UserEntity userEntity) throws IOException {
+        if (image == null || image.isEmpty()) {
+            throw new IllegalArgumentException("Изображение не предоставлено");
         }
+
+        String fileName = saveImage(image);
+
+        AdEntity adEntity = adMapper.createOrUpdateAdDTOToAd(createOrUpdateAd);
+        adEntity.setAuthor(userEntity);
+        adEntity.setImage("/uploads/images/" + fileName);
+
+        adEntity = adRepository.save(adEntity);
+
+        log.info("Объявление успешно создано: {}", adEntity.getTitle());
+        return adMapper.adToAdDTO(adEntity);
     }
+
 
     @Override
     public ExtendedAd getAd(Integer id) {
@@ -92,82 +116,82 @@ public class AdServiceImpl implements AdService {
             throw new IllegalArgumentException("Ad ID cannot be null");
         }
 
-        ru.skypro.homework.model.Ad ad = adRepository.findById(id)
+        AdEntity adEntity = adRepository.findById(id)
                 .orElseThrow(() -> {
                     logger.error(ErrorMessages.AD_NOT_FOUND);
                     return new AdNotFoundException(ErrorMessages.AD_NOT_FOUND);
                 });
 
-        return adMapper.adToExtendedAdDTO(ad);
+        return adMapper.adToExtendedAdDTO(adEntity);
     }
 
     @Override
     public void removeAd(Integer id) {
         logger.info("Removing ad with id: {}", id);
-        ru.skypro.homework.model.Ad ad = adRepository.findById(id)
+        AdEntity adEntity = adRepository.findById(id)
                 .orElseThrow(() -> {
                     logger.error(ErrorMessages.AD_NOT_FOUND);
                     return new AdNotFoundException(ErrorMessages.AD_NOT_FOUND);
                 });
 
-        User currentUser = userService.getCurrentUser();
+        UserEntity currentUserEntity = userService.getAuthenticatedUser();
 
-        if (!ad.getAuthor().equals(currentUser) && !isAdmin(currentUser)) {
+        if (!adEntity.getAuthor().equals(currentUserEntity) && !isAdmin(currentUserEntity)) {
             logger.error(ErrorMessages.UNAUTHORIZED_ACCESS);
             throw new UnauthorizedAccessException(ErrorMessages.UNAUTHORIZED_ACCESS);
         }
 
-        adRepository.delete(ad);
+        adRepository.delete(adEntity);
         logger.info("Ad removed successfully with id: {}", id);
     }
 
     @Override
     public Ad updateAd(Integer id, CreateOrUpdateAd updatedAd) {
         logger.info("Updating ad with id: {}", id);
-        ru.skypro.homework.model.Ad ad = adRepository.findById(id)
+        AdEntity adEntity = adRepository.findById(id)
                 .orElseThrow(() -> {
                     logger.error(ErrorMessages.AD_NOT_FOUND);
                     return new AdNotFoundException(ErrorMessages.AD_NOT_FOUND);
                 });
 
-        User currentUser = userService.getCurrentUser();
+        UserEntity currentUserEntity = userService.getAuthenticatedUser();
 
-        if (!ad.getAuthor().equals(currentUser) && !isAdmin(currentUser)) {
+        if (!adEntity.getAuthor().equals(currentUserEntity) && !isAdmin(currentUserEntity)) {
             logger.error(ErrorMessages.UNAUTHORIZED_ACCESS);
             throw new UnauthorizedAccessException(ErrorMessages.UNAUTHORIZED_ACCESS);
         }
 
-        ru.skypro.homework.model.Ad updatedEntity = adMapper.createOrUpdateAdDTOToAd(updatedAd);
-        updatedEntity.setId(ad.getId());
-        updatedEntity.setAuthor(ad.getAuthor());
-        updatedEntity.setImage(ad.getImage());
+        AdEntity updatedEntity = adMapper.createOrUpdateAdDTOToAd(updatedAd);
+        updatedEntity.setId(adEntity.getId());
+        updatedEntity.setAuthor(adEntity.getAuthor());
+        updatedEntity.setImage(adEntity.getImage());
 
-        ru.skypro.homework.model.Ad savedAd = adRepository.save(updatedEntity);
+        AdEntity savedAdEntity = adRepository.save(updatedEntity);
         logger.info("Ad updated successfully with id: {}", id);
 
-        return adMapper.adToAdDTO(savedAd);
+        return adMapper.adToAdDTO(savedAdEntity);
     }
 
     @Override
     public List<Ad> getAdsMe() {
-        User currentUser = userService.getCurrentUser();
-        logger.info("Fetching ads for user: {}", currentUser.getEmail());
+        UserEntity currentUserEntity = userService.getAuthenticatedUser();
+        logger.info("Fetching ads for user: {}", currentUserEntity.getEmail());
 
-        return adMapper.adsToAdDTOs(adRepository.findByAuthor(currentUser));
+        return adMapper.adsToAdDTOs(adRepository.findByAuthor(currentUserEntity));
     }
 
     @Override
     public byte[] updateImage(Integer id, MultipartFile image) {
         logger.info("Updating image for ad with id: {}", id);
-        ru.skypro.homework.model.Ad ad = adRepository.findById(id)
+        AdEntity adEntity = adRepository.findById(id)
                 .orElseThrow(() -> {
                     logger.error(ErrorMessages.AD_NOT_FOUND);
                     return new AdNotFoundException(ErrorMessages.AD_NOT_FOUND);
                 });
 
-        User currentUser = userService.getCurrentUser();
+        UserEntity currentUserEntity = userService.getAuthenticatedUser();
 
-        if (!ad.getAuthor().equals(currentUser) && !isAdmin(currentUser)) {
+        if (!adEntity.getAuthor().equals(currentUserEntity) && !isAdmin(currentUserEntity)) {
             logger.error(ErrorMessages.UNAUTHORIZED_ACCESS);
             throw new UnauthorizedAccessException(ErrorMessages.UNAUTHORIZED_ACCESS);
         }
@@ -179,8 +203,8 @@ public class AdServiceImpl implements AdService {
 
         try {
             String imagePath = saveImage(image);
-            ad.setImage(imagePath);
-            adRepository.save(ad);
+            adEntity.setImage(imagePath);
+            adRepository.save(adEntity);
             logger.info("Image updated successfully for ad with id: {}", id);
             return image.getBytes();
         } catch (IOException e) {
@@ -189,32 +213,14 @@ public class AdServiceImpl implements AdService {
         }
     }
 
-    private String saveImage(MultipartFile image) throws IOException {
-        Path uploadPath = Paths.get(IMAGE_UPLOAD_DIR);
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
-        }
-
-        String fileName = System.currentTimeMillis() + "_" + image.getOriginalFilename();
-        Path filePath = uploadPath.resolve(fileName);
-
-        Files.copy(image.getInputStream(), filePath);
-
-        return "/uploads/images/ads/" + fileName;
-    }
-
-    private boolean isImageFile(MultipartFile file) {
-        String contentType = file.getContentType();
-        return contentType != null && contentType.startsWith("image/");
-    }
 
     /**
      * Проверяет, является ли пользователь админом.
      *
-     * @param user пользователь
+     * @param userEntity пользователь
      * @return true, если пользователь — админ, иначе false
      */
-    private boolean isAdmin(User user) {
-        return user.getRole() == Role.ADMIN;
+    private boolean isAdmin(UserEntity userEntity) {
+        return userEntity.getRole() == Role.ADMIN;
     }
 }
