@@ -14,6 +14,8 @@ public final class ErrorMessages {
     public static final String INVALID_PASSWORD = "Текущий пароль неверный";
     public static final String IMAGE_FILE_INVALID_FORMAT = "Неверный формат изображения";
     public static final String INVALID_CURRENT_PASSWORD = "Некорректный старый пароль";
+    public static final String INVALID_CREDENTIALS = "Неверные учетные данные";
+    public static final String USER_ALREADY_EXISTS = "Пользователь с email %s уже существует";
 
     private ErrorMessages() {
     }

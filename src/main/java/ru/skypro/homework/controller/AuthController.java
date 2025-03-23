@@ -31,22 +31,19 @@ public class AuthController {
     @Operation(
             summary = "Авторизация пользователя",
             responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "Пользователь успешно авторизован"
-                    ),
-                    @ApiResponse(
-                            responseCode = "401",
-                            description = "Неверные учетные данные",
-                            content = @Content()
-                    )
+                    @ApiResponse(responseCode = "200", description = "OK"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content())
             }
     )
-    public ResponseEntity<?> login(@RequestBody Login login) {
+    public ResponseEntity<Void> login(@RequestBody @Valid Login login) {
         log.info("Запрос на авторизацию пользователя: {}", login.getUsername());
-        if (authService.login(login.getUsername(), login.getPassword())) {
+
+        boolean isAuthenticated = authService.login(login.getUsername(), login.getPassword());
+        if (isAuthenticated) {
+            log.info("Пользователь успешно авторизован: {}", login.getUsername());
             return ResponseEntity.ok().build();
         } else {
+            log.warn("Неудачная попытка авторизации для пользователя: {}", login.getUsername());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
     }
@@ -55,33 +52,18 @@ public class AuthController {
     @Operation(
             summary = "Регистрация пользователя",
             responses = {
-                    @ApiResponse(
-                            responseCode = "201",
-                            description = "Пользователь успешно зарегистрирован"
-                    ),
-                    @ApiResponse(
-                            responseCode = "400",
-                            description = "Некорректные данные для регистрации",
-                            content = @Content()
-                    ),
-                    @ApiResponse(
-                            responseCode = "500",
-                            description = "Внутренняя ошибка сервера",
-                            content = @Content()
-                    )
+                    @ApiResponse(responseCode = "201", description = "Created"),
+                    @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content()),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content())
             }
     )
-    public ResponseEntity<?> register(@Valid @RequestBody Register register) {
+    public ResponseEntity<Long> register(@RequestBody @Valid Register register) {
         log.info("Запрос на регистрацию пользователя: {}", register.getUsername());
 
         try {
-            if (authService.register(register)) {
-                log.info("Пользователь успешно зарегистрирован: {}", register.getUsername());
-                return ResponseEntity.status(HttpStatus.CREATED).build();
-            } else {
-                log.warn("Не удалось зарегистрировать пользователя: {}", register.getUsername());
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-            }
+            Long userId = authService.register(register);
+            log.info("Пользователь успешно зарегистрирован: {}", register.getUsername());
+            return ResponseEntity.status(HttpStatus.CREATED).body(userId);
         } catch (Exception e) {
             log.error("Ошибка при регистрации пользователя: {}", register.getUsername(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

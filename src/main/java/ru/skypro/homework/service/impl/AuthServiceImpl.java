@@ -2,23 +2,23 @@ package ru.skypro.homework.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.stereotype.Service;
 import ru.skypro.homework.dto.Register;
+import ru.skypro.homework.exception.ErrorMessages;
+import ru.skypro.homework.exception.InvalidCredentialsException;
+import ru.skypro.homework.exception.UserAlreadyExistsException;
+import ru.skypro.homework.exception.UserNotFoundException;
 import ru.skypro.homework.mapper.UserMapper;
+import ru.skypro.homework.model.UserEntity;
 import ru.skypro.homework.repository.UserRepository;
+import ru.skypro.homework.security.UserDetailsAdapter;
 import ru.skypro.homework.service.AuthService;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AuthServiceImpl implements AuthService {
-    private final JdbcTemplate jdbcTemplate;
-    private final UserDetailsManager userDetailsManager;
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
@@ -27,60 +27,34 @@ public class AuthServiceImpl implements AuthService {
     public boolean login(String username, String password) {
         log.debug("Попытка входа пользователя: {}", username);
 
-        try {
-            UserDetails userDetails = userDetailsManager.loadUserByUsername(username);
+        UserEntity user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new UserNotFoundException(String.format(ErrorMessages.USER_NOT_FOUND, username)));
 
-            if (passwordEncoder.matches(password, userDetails.getPassword())) {
-                log.info("Успешный вход пользователя: {}", username);
-                return true;
-            }
+        UserDetailsAdapter userDetails = new UserDetailsAdapter(user);
 
-            log.warn("Неверный пароль для пользователя: {}", username);
-            return false;
-        } catch (UsernameNotFoundException e) {
-            log.error("Пользователь не найден: {}", username);
-            return false;
-        } catch (Exception e) {
-            log.error("Ошибка при входе пользователя: {}", username, e);
-            return false;
+        if (!passwordEncoder.matches(password, userDetails.getPassword())) {
+            throw new InvalidCredentialsException(ErrorMessages.INVALID_CREDENTIALS);
         }
+
+        log.info("Успешный вход пользователя: {}", username);
+        return true;
     }
 
     @Override
-    public boolean register(Register register) {
+    public Long register(Register register) {
         String email = register.getUsername();
         log.debug("Попытка регистрации пользователя: {}", email);
 
-        if (userRepository.findByEmail(email).isPresent()) {
-            log.warn("Пользователь с email {} уже существует", email);
-            return false;
+        if (userRepository.existsByEmail(email)) {
+            throw new UserAlreadyExistsException(String.format(ErrorMessages.USER_ALREADY_EXISTS, email));
         }
 
-        try {
-            log.info("Регистрация нового пользователя: {}", register);
+        UserEntity user = userMapper.toUser(register);
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-            jdbcTemplate.update(
-                    "INSERT INTO users (email, password, enabled, first_name, last_name, phone, role) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    email,
-                    passwordEncoder.encode(register.getPassword()),
-                    true,
-                    register.getFirstName(),
-                    register.getLastName(),
-                    register.getPhone(),
-                    register.getRole().name()
-            );
+        UserEntity savedUser = userRepository.save(user);
+        log.info("Пользователь успешно зарегистрирован: {}", email);
 
-            jdbcTemplate.update(
-                    "INSERT INTO authorities (email, authority) VALUES (?, ?)",
-                    email,
-                    "ROLE_" + register.getRole().name()
-            );
-
-            log.info("Пользователь успешно зарегистрирован: {}", email);
-            return true;
-        } catch (Exception e) {
-            log.error("Ошибка при регистрации пользователя: {}", email, e);
-            return false;
-        }
+        return savedUser.getId();
     }
 }
