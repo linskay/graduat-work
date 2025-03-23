@@ -2,6 +2,7 @@ package ru.skypro.homework.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -10,6 +11,7 @@ import java.time.Instant;
 
 @Data
 @Entity
+@AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "comments")
 public class CommentEntity {
