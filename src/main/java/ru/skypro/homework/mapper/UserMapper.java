@@ -1,12 +1,10 @@
 package ru.skypro.homework.mapper;
 
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 import org.mapstruct.*;
-import org.mapstruct.factory.Mappers;
-import org.springframework.web.bind.annotation.GetMapping;
-import ru.skypro.homework.dto.*;
+import ru.skypro.homework.dto.Login;
+import ru.skypro.homework.dto.Register;
+import ru.skypro.homework.dto.UpdateUser;
+import ru.skypro.homework.dto.User;
 import ru.skypro.homework.model.UserEntity;
 
 @Mapper(componentModel = "spring", uses = {UserMapper.class})
