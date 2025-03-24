@@ -34,7 +34,7 @@ class UserMapperTest {
         userEntity.setEmail("ivan@example.com");
         userEntity.setPassword("hashedPassword");
         userEntity.setPhone("+79251234567");
-        userEntity.setImageUrl("default-avatar.jpg");
+        userEntity.setImageUrl("static/src/images/default-avatar.jpg");
 
         userDTO = new User();
         userDTO.setId(1L);
@@ -42,7 +42,7 @@ class UserMapperTest {
         userDTO.setLastName("Иванов");
         userDTO.setEmail("ivan@example.com");
         userDTO.setPhone("+79251234567");
-        userDTO.setImageUrl("default-avatar.jpg");
+        userDTO.setImageUrl("static/src/images/default-avatar.jpg");
 
         login = new Login();
         login.setUsername("user@example.com");
@@ -111,6 +111,6 @@ class UserMapperTest {
         assertThat(userEntity.getId()).isEqualTo(1L);
         assertThat(userEntity.getEmail()).isEqualTo("ivan@example.com");
         assertThat(userEntity.getPassword()).isEqualTo("hashedPassword");
-        assertThat(userEntity.getImageUrl()).isEqualTo("default-avatar.jpg");
+        assertThat(userEntity.getImageUrl()).isEqualTo("static/src/images/default-avatar.jpg");
     }
 }

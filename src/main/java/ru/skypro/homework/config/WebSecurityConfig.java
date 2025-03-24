@@ -3,16 +3,15 @@ package ru.skypro.homework.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-
-import javax.sql.DataSource;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
+@EnableWebSecurity
 public class WebSecurityConfig {
 
     private static final String[] AUTH_WHITELIST = {
@@ -23,18 +22,6 @@ public class WebSecurityConfig {
             "/login",
             "/register"
     };
-
-    @Bean
-    public JdbcUserDetailsManager userDetailsService(DataSource dataSource, PasswordEncoder passwordEncoder) {
-        JdbcUserDetailsManager manager = new JdbcUserDetailsManager(dataSource);
-
-        manager.setUsersByUsernameQuery("SELECT email, password, enabled FROM users WHERE email = ?");
-        manager.setAuthoritiesByUsernameQuery("SELECT email, authority FROM authorities WHERE email = ?");
-        manager.setCreateAuthoritySql("INSERT INTO authorities (email, authority) VALUES (?, ?)");
-        manager.setCreateUserSql("INSERT INTO users (email, password, enabled, first_name, last_name, phone, role) VALUES (?, ?, ?, ?, ?, ?, ?)");
-
-        return manager;
-    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {

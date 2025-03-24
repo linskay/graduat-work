@@ -13,7 +13,7 @@ public interface AdMapper {
     @Mapping(target = "pk", source = "id")
     @Mapping(target = "title", source = "title")
     @Mapping(target = "price", source = "price")
-    @Mapping(target = "image", ignore = true)
+    @Mapping(target = "image", source = "image")
     @Mapping(target = "author", source = "author.id")
     Ad adEntityToAd(AdEntity adEntity);
 
@@ -21,7 +21,7 @@ public interface AdMapper {
     @Mapping(target = "title", source = "title")
     @Mapping(target = "price", source = "price")
     @Mapping(target = "description", source = "description")
-    @Mapping(target = "image", ignore = true)
+    @Mapping(target = "image", source = "image")
     @Mapping(target = "email", source = "author.email")
     @Mapping(target = "author", source = "author.id")
     @Mapping(target = "phone", source = "author.phone")

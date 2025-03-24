@@ -23,7 +23,7 @@ public interface UserMapper {
     @Mapping(source = "email", target = "email")
     @Mapping(source = "phone", target = "phone")
     @Mapping(source = "imageUrl", target = "imageUrl")
-    UserEntity toUser(User userDTO);
+    UserEntity toUser(User user);
 
     @Mapping(source = "username", target = "email")
     @Mapping(source = "password", target = "password")
@@ -37,17 +37,11 @@ public interface UserMapper {
     @Mapping(target = "role", constant = "USER")
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "enabled", constant = "true")
-    @Mapping(target = "imageUrl", constant = "default-avatar.jpg")
+    @Mapping(target = "imageUrl", constant = "/src/images/default-avatar.jpg")
     UserEntity toUser(Register register);
 
     UpdateUser toUpdateUser(UserEntity userEntity);
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "email", ignore = true)
-    @Mapping(target = "password", ignore = true)
-    @Mapping(target = "role", ignore = true)
-    @Mapping(target = "imageUrl", ignore = true)
-    @Mapping(target = "adEntities", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateUserFromDTO(UpdateUser updateUser, @MappingTarget UserEntity userEntity);
 }

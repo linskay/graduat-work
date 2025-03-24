@@ -27,12 +27,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<String> handleGenericException(Exception e) {
-        log.error("Произошла внутренняя ошибка сервера", e);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Произошла внутренняя ошибка сервера");
-    }
-
     @ExceptionHandler(AdNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleAdNotFoundException(AdNotFoundException ex) {
         Map<String, String> error = new HashMap<>();
@@ -83,5 +77,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<String> handleUserNotFoundException(UserNotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<String> handleGenericException(Exception e) {
+        log.error("Произошла внутренняя ошибка сервера", e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Произошла внутренняя ошибка сервера");
     }
 }

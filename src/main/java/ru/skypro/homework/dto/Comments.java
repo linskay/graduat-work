@@ -10,6 +10,7 @@ import java.util.List;
 
 @Data
 @Builder
+@AllArgsConstructor
 @NoArgsConstructor
 @Schema(description = "DTO для представления списка комментариев")
 public class Comments {
@@ -19,9 +20,4 @@ public class Comments {
 
     @Schema(description = "Список комментариев")
     private List<Comment> results;
-
-    public Comments(Integer count, List<Comment> results) {
-        this.count = count;
-        this.results = results;
-    }
 }

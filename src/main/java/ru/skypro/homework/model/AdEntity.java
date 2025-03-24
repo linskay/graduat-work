@@ -1,6 +1,5 @@
 package ru.skypro.homework.model;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,11 +25,12 @@ public class AdEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id")
-    @JsonBackReference
+    // @JsonBackReference
     private UserEntity author;
 
     @OneToMany(mappedBy = "adEntity", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JsonIgnore
     @ToString.Exclude
     private List<CommentEntity> comments = new ArrayList<>();
+    
 }

@@ -12,7 +12,7 @@ import ru.skypro.homework.exception.UserNotFoundException;
 import ru.skypro.homework.mapper.UserMapper;
 import ru.skypro.homework.model.UserEntity;
 import ru.skypro.homework.repository.UserRepository;
-import ru.skypro.homework.security.UserDetailsAdapter;
+import ru.skypro.homework.config.UserDetailsAdapter;
 import ru.skypro.homework.service.AuthService;
 
 @Service

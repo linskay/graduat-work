@@ -85,7 +85,7 @@ public class UserController {
         UpdateUser updatedUser = userService.updateUser(updateUser);
 
         log.info("Информация о пользователе успешно обновлена");
-        return ResponseEntity.ok(updateUser);
+        return ResponseEntity.ok(updatedUser);
     }
 
     @PatchMapping(value = "/me/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
