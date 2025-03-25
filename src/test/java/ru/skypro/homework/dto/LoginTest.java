@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -16,7 +17,7 @@ public class LoginTest {
     @Test
     @DisplayName("Проверка корректного создания объекта Login")
     void testValidLogin() {
-        try (var validatorFactory = Validation.buildDefaultValidatorFactory()) {
+        try (ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory()) {
             Validator validator = validatorFactory.getValidator();
 
             Login login = new Login();
@@ -32,7 +33,7 @@ public class LoginTest {
     @Test
     @DisplayName("Проверка создания объекта Login с пустым логином")
     void testInvalidUsername_Blank() {
-        try (var validatorFactory = Validation.buildDefaultValidatorFactory()) {
+        try (ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory()) {
             Validator validator = validatorFactory.getValidator();
 
             Login login = new Login();
@@ -51,7 +52,7 @@ public class LoginTest {
     @Test
     @DisplayName("Проверка создания объекта Login с логином меньше 4 символов")
     void testInvalidUsername_TooShort() {
-        try (var validatorFactory = Validation.buildDefaultValidatorFactory()) {
+        try (ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory()) {
             Validator validator = validatorFactory.getValidator();
 
             Login login = new Login();
@@ -70,7 +71,7 @@ public class LoginTest {
     @Test
     @DisplayName("Проверка создания объекта Login с логином больше 32 символов")
     void testInvalidUsername_TooLong() {
-        try (var validatorFactory = Validation.buildDefaultValidatorFactory()) {
+        try (ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory()) {
             Validator validator = validatorFactory.getValidator();
 
             Login login = new Login();
@@ -88,7 +89,7 @@ public class LoginTest {
     @Test
     @DisplayName("Проверка создания объекта Login с некорректным email")
     void testInvalidUsername_InvalidEmail() {
-        try (var validatorFactory = Validation.buildDefaultValidatorFactory()) {
+        try (ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory()) {
             Validator validator = validatorFactory.getValidator();
 
             Login login = new Login();
@@ -107,7 +108,7 @@ public class LoginTest {
     @Test
     @DisplayName("Проверка создания объекта Login с пустым паролем")
     void testInvalidPassword_Blank() {
-        try (var validatorFactory = Validation.buildDefaultValidatorFactory()) {
+        try (ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory()) {
             Validator validator = validatorFactory.getValidator();
 
             Login login = new Login();
@@ -126,7 +127,7 @@ public class LoginTest {
     @Test
     @DisplayName("Проверка создания объекта Login с паролем меньше 8 символов")
     void testInvalidPassword_TooShort() {
-        try (var validatorFactory = Validation.buildDefaultValidatorFactory()) {
+        try (ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory()) {
             Validator validator = validatorFactory.getValidator();
 
             Login login = new Login();
@@ -145,7 +146,7 @@ public class LoginTest {
     @Test
     @DisplayName("Проверка создания объекта Login с паролем больше 16 символов")
     void testInvalidPassword_TooLong() {
-        try (var validatorFactory = Validation.buildDefaultValidatorFactory()) {
+        try (ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory()) {
             Validator validator = validatorFactory.getValidator();
 
             Login login = new Login();
