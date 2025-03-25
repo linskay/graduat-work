@@ -37,7 +37,7 @@ public class UserEntity {
     private String imageUrl;
 
     @JsonIgnore
-    private boolean enabled;
+    private boolean enabled = true;
 
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @ToString.Exclude

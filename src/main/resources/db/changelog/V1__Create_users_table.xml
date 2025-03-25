@@ -33,7 +33,7 @@
             </column>
 
             <column name="image_url" type="VARCHAR(255)" defaultValue="default-avatar.jpg">
-                <constraints nullable="false"/>
+                <constraints nullable="true"/>
             </column>
 
             <column name="role" type="VARCHAR(20)" defaultValue="USER">

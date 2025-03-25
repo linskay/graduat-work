@@ -8,6 +8,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,6 +30,7 @@ import javax.validation.Valid;
 public class AuthController {
 
     private final AuthService authService;
+    private final AuthenticationManager authenticationManager;
 
     @PostMapping("/login")
     @Operation(
@@ -36,15 +41,14 @@ public class AuthController {
             }
     )
     public ResponseEntity<Void> login(@RequestBody @Valid Login login) {
-        log.info("Запрос на авторизацию пользователя: {}", login.getUsername());
-
-        boolean isAuthenticated = authService.login(login.getUsername(), login.getPassword());
-        if (isAuthenticated) {
-            log.info("Пользователь успешно авторизован: {}", login.getUsername());
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(login.getUsername(), login.getPassword())
+            );
+            SecurityContextHolder.getContext().setAuthentication(authentication);
             return ResponseEntity.ok().build();
-        } else {
-            log.warn("Неудачная попытка авторизации для пользователя: {}", login.getUsername());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
     }
 
@@ -52,21 +56,16 @@ public class AuthController {
     @Operation(
             summary = "Регистрация пользователя",
             responses = {
-                    @ApiResponse(responseCode = "201", description = "Created"),
-                    @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content()),
-                    @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content())
+                    @ApiResponse(responseCode = "201", description = "Created", content = @Content()),
+                    @ApiResponse(responseCode = "400", description = "Bad Request", content = @Content())
             }
     )
     public ResponseEntity<Long> register(@RequestBody @Valid Register register) {
-        log.info("Запрос на регистрацию пользователя: {}", register.getUsername());
-
-        try {
-            Long userId = authService.register(register);
-            log.info("Пользователь успешно зарегистрирован: {}", register.getUsername());
-            return ResponseEntity.status(HttpStatus.CREATED).body(userId);
-        } catch (Exception e) {
-            log.error("Ошибка при регистрации пользователя: {}", register.getUsername(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        Long userId = authService.register(register);
+        if (userId != null) {
+            return new ResponseEntity<>(userId, HttpStatus.CREATED);
+        } else {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
 }

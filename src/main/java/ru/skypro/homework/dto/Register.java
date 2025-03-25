@@ -44,5 +44,5 @@ public class Register {
 
     @Schema(description = "Роль пользователя", example = "USER")
     @NotNull(message = "Роль не может быть пустой")
-    private Role role = Role.USER;
+    private Role role;
 }
