@@ -42,7 +42,7 @@ class UserMapperTest {
         userDTO.setLastName("Иванов");
         userDTO.setEmail("ivan@example.com");
         userDTO.setPhone("+79251234567");
-        userDTO.setImageUrl("static/src/images/default-avatar.jpg");
+        userDTO.setImage("static/src/images/default-avatar.jpg");
 
         login = new Login();
         login.setUsername("user@example.com");
@@ -73,7 +73,7 @@ class UserMapperTest {
         assertThat(result.getLastName()).isEqualTo(userEntity.getLastName());
         assertThat(result.getEmail()).isEqualTo(userEntity.getEmail());
         assertThat(result.getPhone()).isEqualTo(userEntity.getPhone());
-        assertThat(result.getImageUrl()).isEqualTo(userEntity.getImageUrl());
+        assertThat(result.getImage()).isEqualTo(userEntity.getImageUrl());
     }
 
     @Test
@@ -87,7 +87,7 @@ class UserMapperTest {
         assertThat(result.getLastName()).isEqualTo(userDTO.getLastName());
         assertThat(result.getEmail()).isEqualTo(userDTO.getEmail());
         assertThat(result.getPhone()).isEqualTo(userDTO.getPhone());
-        assertThat(result.getImageUrl()).isEqualTo(userDTO.getImageUrl());
+        assertThat(result.getImageUrl()).isEqualTo(userDTO.getImage());
     }
 
     @Test

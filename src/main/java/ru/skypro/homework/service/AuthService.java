@@ -9,6 +9,7 @@ import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.skypro.homework.dto.Register;
+import ru.skypro.homework.mapper.UserMapper;
 import ru.skypro.homework.model.UserEntity;
 import ru.skypro.homework.repository.UserRepository;
 
@@ -19,6 +20,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final JdbcUserDetailsManager jdbcUserDetailsManager;
+    private final UserMapper userMapper;
 
 
     @Transactional
@@ -27,14 +29,8 @@ public class AuthService {
             return null;
         }
 
-
-        UserEntity userEntity = new UserEntity();
-        userEntity.setEmail(register.getUsername());
+        UserEntity userEntity = userMapper.toUser(register);
         userEntity.setPassword(passwordEncoder.encode(register.getPassword()));
-        userEntity.setFirstName(register.getFirstName());
-        userEntity.setLastName(register.getLastName());
-        userEntity.setPhone(register.getPhone());
-        userEntity.setRole(register.getRole());
 
         userEntity = userRepository.save(userEntity);
 

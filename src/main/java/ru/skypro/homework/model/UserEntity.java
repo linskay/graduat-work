@@ -34,7 +34,8 @@ public class UserEntity {
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    private String imageUrl;
+    @Column(name = "image_url")
+    private String image = "/images/default-avatar.jpg";
 
     @JsonIgnore
     private boolean enabled = true;

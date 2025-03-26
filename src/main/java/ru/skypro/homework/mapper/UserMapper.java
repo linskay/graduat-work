@@ -15,14 +15,14 @@ public interface UserMapper {
     @Mapping(source = "lastName", target = "lastName")
     @Mapping(source = "email", target = "email")
     @Mapping(source = "phone", target = "phone")
-    @Mapping(source = "imageUrl", target = "imageUrl")
+    @Mapping(source = "image", target = "image")
     User toUserDTO(UserEntity userEntity);
 
     @Mapping(source = "firstName", target = "firstName")
     @Mapping(source = "lastName", target = "lastName")
     @Mapping(source = "email", target = "email")
     @Mapping(source = "phone", target = "phone")
-    @Mapping(source = "imageUrl", target = "imageUrl")
+    @Mapping(source = "image", target = "image")
     UserEntity toUser(User user);
 
     @Mapping(source = "username", target = "email")
@@ -37,7 +37,7 @@ public interface UserMapper {
     @Mapping(target = "role", constant = "USER")
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "enabled", constant = "true")
-    @Mapping(target = "imageUrl", constant = "/src/images/default-avatar.jpg")
+    @Mapping(target = "image", constant = "/src/images/default-avatar.jpg")
     UserEntity toUser(Register register);
 
     UpdateUser toUpdateUser(UserEntity userEntity);

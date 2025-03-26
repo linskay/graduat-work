@@ -13,14 +13,15 @@
 
     <groupId>ru.skypro</groupId>
     <artifactId>adEntities</artifactId>
-    <version>0.0.1-SNAPSHOT
-    </version
-    >
+    <version>0.0.1-SNAPSHOT</version>
     <name>Ads application</name>
     <description>Application for managing adEntities</description>
 
     <properties>
         <java.version>17</java.version>
+        <app.name>${project.name}</app.name>
+        <app.description>${project.description}</app.description>
+        <app.version>${project.version}</app.version>
     </properties>
 
     <dependencies>
@@ -50,12 +51,16 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.7.2</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.liquibase</groupId>
             <artifactId>liquibase-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <!-- Тестирование -->
@@ -67,6 +72,11 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
 

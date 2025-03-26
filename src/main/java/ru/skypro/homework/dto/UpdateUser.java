@@ -16,17 +16,17 @@ import javax.validation.constraints.Size;
 @Schema(description = "DTO для обновления информации о пользователе")
 public class UpdateUser {
 
-   // @NotNull(message = "firstName не может быть null")
+    @NotNull(message = "firstName не может быть null")
     @Schema(description = "Имя пользователя", example = "Олег")
     @Size(min = 3, max = 10, message = "Имя должно содержать от 3 до 10 символов")
     private String firstName;
 
-   // @NotNull(message = "lastName не может быть null")
+    @NotNull(message = "lastName не может быть null")
     @Schema(description = "Фамилия пользователя", example = "Олегович")
     @Size(min = 3, max = 10, message = "Фамилия должна содержать от 3 до 10 символов")
     private String lastName;
 
- //   @NotBlank(message = "Телефон не может быть пустым")
+    @NotBlank(message = "Телефон не может быть пустым")
     @Schema(description = "Телефон пользователя", example = "+7 (999) 123-45-67")
     @Pattern(
             regexp = "\\+7\\s?\\(?\\d{3}\\)?\\s?\\d{3}-?\\d{2}-?\\d{2}",

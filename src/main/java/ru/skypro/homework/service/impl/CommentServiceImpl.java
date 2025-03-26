@@ -33,8 +33,7 @@ public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final CommentMapper commentMapper;
     private final AuthenticationUtils authenticationUtils;
-    private final CommentSecurityService commentSecurityService;
-    private final AdSecurityService adSecurityService;
+
 
     private UserEntity getCurrentUser() {
         return authenticationUtils.getAuthenticatedUser();
@@ -45,10 +44,7 @@ public class CommentServiceImpl implements CommentService {
         log.debug("Запрос на добавление комментария к объявлению с ID: {}", adId);
 
         AdEntity adEntity = adRepository.findById(adId)
-                .orElseThrow(() -> {
-                    log.error("Объявление с ID {} не найдено", adId);
-                    return new AdNotFoundException("Объявление не найдено");
-                });
+                .orElseThrow(() -> new AdNotFoundException("Объявление не найдено"));
 
         UserEntity currentUser = getCurrentUser();
 
@@ -80,29 +76,24 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public void deleteComment(Integer commentId) {
-        log.debug("Запрос на удаление комментария с ID: {}", commentId);
         CommentEntity commentEntity = commentRepository.findById(commentId)
-                .orElseThrow(() -> new CommentNotFoundException("Комментарий не найден"));
-
+                .orElseThrow(() ->
+                        new CommentNotFoundException("Комментарий не найден"));
         commentRepository.delete(commentEntity);
-
-        log.info("Комментарий успешно удален с ID: {}", commentId);
     }
 
     @Override
     public Comments getCommentsByAdId(Integer adId) {
-        log.debug("Запрос на получение комментариев объявления с ID: {}", adId);
 
         AdEntity adEntity = adRepository.findById(adId)
-                .orElseThrow(() -> new AdNotFoundException("Объявление не найдено"));
-
+                .orElseThrow(() ->
+                        new AdNotFoundException("Объявление не найдено"));
         List<CommentEntity> commentEntities = commentRepository.findByAdEntity(adEntity);
 
         List<Comment> commentDTOs = commentEntities.stream()
                 .map(commentMapper::toDTO)
                 .toList();
 
-        log.info("Комментарии успешно получены для объявления с ID: {}", adId);
         return Comments.builder()
                 .count(commentDTOs.size())
                 .results(commentDTOs)

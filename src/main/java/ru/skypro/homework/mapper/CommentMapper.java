@@ -25,7 +25,7 @@ public interface CommentMapper {
 
     @Mapping(source = "id", target = "pk")
     @Mapping(source = "author.id", target = "author")
-    @Mapping(source = "author.imageUrl", target = "authorImage")
+    @Mapping(source = "author.image", target = "authorImage")
     @Mapping(source = "createdAt", target = "createdAt", qualifiedByName = "mapInstantToEpochMillis")
     Comment toDTO(CommentEntity commentEntity);
 

@@ -1,9 +1,9 @@
 package ru.skypro.homework.util;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
+import ru.skypro.homework.exception.ImageUploadException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -13,7 +13,6 @@ import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
 @Component
-@Slf4j
 public class ImageUtils {
     @Value("${image.upload.dir}")
     private String uploadDirPath;
@@ -39,7 +38,7 @@ public class ImageUtils {
 
             return baseUrl + "/" + fileName;
         } catch (IOException e) {
-            throw new RuntimeException("Не удалось сохранить изображение", e);
+            throw new ImageUploadException("Не удалось сохранить изображение", e);
         }
     }
 
@@ -51,13 +50,12 @@ public class ImageUtils {
      */
     public byte[] getImageAsBytes(String imagePath) {
         try {
-            // Удаляем базовый URL, чтобы получить только путь к файлу
-            String relativePath = imagePath.replace(baseUrl, "");
+            String relativePath = imagePath.substring(baseUrl.length());
             Path filePath = Paths.get(uploadDirPath + relativePath);
 
             return Files.readAllBytes(filePath);
         } catch (IOException e) {
-            throw new RuntimeException("Не удалось прочитать изображение", e);
+            throw new ImageUploadException("Не удалось прочитать изображение", e);
         }
     }
 }

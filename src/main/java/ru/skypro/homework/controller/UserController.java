@@ -16,7 +16,9 @@ import ru.skypro.homework.dto.NewPassword;
 import ru.skypro.homework.dto.UpdateUser;
 import ru.skypro.homework.dto.User;
 import ru.skypro.homework.mapper.UserMapper;
+import ru.skypro.homework.repository.UserRepository;
 import ru.skypro.homework.service.UserService;
+import ru.skypro.homework.util.AuthenticationUtils;
 
 import javax.validation.Valid;
 
@@ -29,7 +31,8 @@ import javax.validation.Valid;
 public class UserController {
 
     private final UserService userService;
-    private UserMapper userMapper;
+    private final AuthenticationUtils authenticationUtils;
+
 
     @PostMapping("/set_password")
     @Operation(
@@ -97,8 +100,11 @@ public class UserController {
             }
     )
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Void> updateUserImage(@RequestParam("image") MultipartFile image) {
-        userService.updateUserAvatar(image);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<byte[]> updateUserImage(@PathVariable Long id,
+                                                  @RequestParam("image") MultipartFile image) {
+        byte[] updatedImage = userService.updateUserAvatar(id, image);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(updatedImage);
     }
 }
