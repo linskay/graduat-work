@@ -34,7 +34,7 @@ class UserMapperTest {
         userEntity.setEmail("ivan@example.com");
         userEntity.setPassword("hashedPassword");
         userEntity.setPhone("+79251234567");
-        userEntity.setImageUrl("static/src/images/default-avatar.jpg");
+        userEntity.setImage("/images/default-avatar.jpg");
 
         userDTO = new User();
         userDTO.setId(1L);
@@ -42,7 +42,7 @@ class UserMapperTest {
         userDTO.setLastName("Иванов");
         userDTO.setEmail("ivan@example.com");
         userDTO.setPhone("+79251234567");
-        userDTO.setImage("static/src/images/default-avatar.jpg");
+        userDTO.setImage("/images/default-avatar.jpg");
 
         login = new Login();
         login.setUsername("user@example.com");
@@ -73,7 +73,7 @@ class UserMapperTest {
         assertThat(result.getLastName()).isEqualTo(userEntity.getLastName());
         assertThat(result.getEmail()).isEqualTo(userEntity.getEmail());
         assertThat(result.getPhone()).isEqualTo(userEntity.getPhone());
-        assertThat(result.getImage()).isEqualTo(userEntity.getImageUrl());
+        assertThat(result.getImage()).isEqualTo(userEntity.getImage());
     }
 
     @Test
@@ -87,7 +87,7 @@ class UserMapperTest {
         assertThat(result.getLastName()).isEqualTo(userDTO.getLastName());
         assertThat(result.getEmail()).isEqualTo(userDTO.getEmail());
         assertThat(result.getPhone()).isEqualTo(userDTO.getPhone());
-        assertThat(result.getImageUrl()).isEqualTo(userDTO.getImage());
+        assertThat(result.getImage()).isEqualTo(userDTO.getImage());
     }
 
     @Test
@@ -111,6 +111,6 @@ class UserMapperTest {
         assertThat(userEntity.getId()).isEqualTo(1L);
         assertThat(userEntity.getEmail()).isEqualTo("ivan@example.com");
         assertThat(userEntity.getPassword()).isEqualTo("hashedPassword");
-        assertThat(userEntity.getImageUrl()).isEqualTo("static/src/images/default-avatar.jpg");
+        assertThat(userEntity.getImage()).isEqualTo("/images/default-avatar.jpg");
     }
 }

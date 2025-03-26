@@ -21,8 +21,6 @@ import ru.skypro.homework.util.ImageUtils;
 
 import java.util.List;
 
-import static ru.skypro.homework.exception.ErrorMessages.AD_NOT_FOUND;
-
 @Slf4j
 @Service
 @Transactional
@@ -51,7 +49,7 @@ public class AdServiceImpl implements AdService {
     public ExtendedAd getExtendedAd(Integer id) {
         AdEntity adEntity = adRepository.findById(id)
                 .orElseThrow(() -> new
-                        AdNotFoundException(AD_NOT_FOUND.formatted(id)));
+                        AdNotFoundException(id));
         UserEntity currentUser = getCurrentUser();
         if (!adEntity.getAuthor().equals(currentUser)) {
             throw new AccessDeniedException("Нет прав на просмотр этого объявления");
@@ -61,10 +59,9 @@ public class AdServiceImpl implements AdService {
 
     @Override
     public void deleteAd(Integer id) {
-        log.debug("Запрос на удаление объявления с ID: {}", id);
         AdEntity adEntity = adRepository.findById(id)
                 .orElseThrow(() -> new
-                        AdNotFoundException(AD_NOT_FOUND.formatted(id)));
+                        AdNotFoundException(id));
         adRepository.delete(adEntity);
         log.info("Объявление успешно удалено с ID: {}", id);
     }
@@ -73,7 +70,7 @@ public class AdServiceImpl implements AdService {
     public Integer updateAd(Integer id, CreateOrUpdateAd createOrUpdateAd) {
         AdEntity adEntity = adRepository.findById(id)
                 .orElseThrow(() -> new
-                        AdNotFoundException(AD_NOT_FOUND.formatted(id)));
+                        AdNotFoundException(id));
         adEntity.setTitle(createOrUpdateAd.getTitle());
         adEntity.setPrice(createOrUpdateAd.getPrice());
         adEntity.setDescription(createOrUpdateAd.getDescription());
@@ -105,7 +102,7 @@ public class AdServiceImpl implements AdService {
     public byte[] updateAdImage(Integer id, MultipartFile image) {
         AdEntity adEntity = adRepository.findById(id)
                 .orElseThrow(() ->
-                        new AdNotFoundException(AD_NOT_FOUND.formatted(id)));
+                        new AdNotFoundException(id));
         String imageUrl = imageUtils.saveImage(image);
         adEntity.setImage(imageUrl);
         adRepository.save(adEntity);

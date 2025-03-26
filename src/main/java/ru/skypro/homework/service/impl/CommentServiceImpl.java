@@ -15,8 +15,6 @@ import ru.skypro.homework.model.CommentEntity;
 import ru.skypro.homework.model.UserEntity;
 import ru.skypro.homework.repository.AdRepository;
 import ru.skypro.homework.repository.CommentRepository;
-import ru.skypro.homework.service.AdSecurityService;
-import ru.skypro.homework.service.CommentSecurityService;
 import ru.skypro.homework.service.CommentService;
 import ru.skypro.homework.util.AuthenticationUtils;
 
@@ -41,10 +39,9 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public Comment addComment(Integer adId, CreateOrUpdateComment commentDTO) {
-        log.debug("Запрос на добавление комментария к объявлению с ID: {}", adId);
 
         AdEntity adEntity = adRepository.findById(adId)
-                .orElseThrow(() -> new AdNotFoundException("Объявление не найдено"));
+                .orElseThrow(() -> new AdNotFoundException(adId));
 
         UserEntity currentUser = getCurrentUser();
 
@@ -54,23 +51,21 @@ public class CommentServiceImpl implements CommentService {
         commentEntity.setCreatedAt(Instant.now());
 
         CommentEntity savedComment = commentRepository.save(commentEntity);
-
         log.info("Комментарий успешно добавлен к объявлению с ID: {}", adId);
+
         return commentMapper.toDTO(savedComment);
     }
 
     @Override
     public Comment updateComment(Integer commentId, CreateOrUpdateComment updateDTO) {
-        log.debug("Запрос на обновление комментария с ID: {}", commentId);
-
         CommentEntity commentEntity = commentRepository.findById(commentId)
-                .orElseThrow(() -> new CommentNotFoundException("Комментарий не найден"));
+                .orElseThrow(() -> new CommentNotFoundException(commentId));
 
         commentEntity.setText(updateDTO.getText());
 
         CommentEntity updatedComment = commentRepository.save(commentEntity);
-
         log.info("Комментарий успешно обновлен с ID: {}", commentId);
+
         return commentMapper.toDTO(updatedComment);
     }
 
@@ -78,7 +73,7 @@ public class CommentServiceImpl implements CommentService {
     public void deleteComment(Integer commentId) {
         CommentEntity commentEntity = commentRepository.findById(commentId)
                 .orElseThrow(() ->
-                        new CommentNotFoundException("Комментарий не найден"));
+                        new CommentNotFoundException(commentId));
         commentRepository.delete(commentEntity);
     }
 
@@ -87,7 +82,7 @@ public class CommentServiceImpl implements CommentService {
 
         AdEntity adEntity = adRepository.findById(adId)
                 .orElseThrow(() ->
-                        new AdNotFoundException("Объявление не найдено"));
+                        new AdNotFoundException(adId));
         List<CommentEntity> commentEntities = commentRepository.findByAdEntity(adEntity);
 
         List<Comment> commentDTOs = commentEntities.stream()

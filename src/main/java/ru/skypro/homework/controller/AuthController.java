@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -22,7 +21,6 @@ import ru.skypro.homework.service.AuthService;
 
 import javax.validation.Valid;
 
-@Slf4j
 @CrossOrigin(value = "http://localhost:3000")
 @RestController
 @RequiredArgsConstructor
@@ -41,15 +39,11 @@ public class AuthController {
             }
     )
     public ResponseEntity<Void> login(@RequestBody @Valid Login login) {
-        try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(login.getUsername(), login.getPassword())
-            );
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(login.getUsername(), login.getPassword())
+        );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/register")
@@ -62,10 +56,6 @@ public class AuthController {
     )
     public ResponseEntity<Long> register(@RequestBody @Valid Register register) {
         Long userId = authService.register(register);
-        if (userId != null) {
-            return new ResponseEntity<>(userId, HttpStatus.CREATED);
-        } else {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+        return new ResponseEntity<>(userId, HttpStatus.CREATED);
     }
 }

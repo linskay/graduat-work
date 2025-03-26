@@ -1,10 +1,11 @@
 package ru.skypro.homework.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,7 +17,6 @@ import ru.skypro.homework.service.CommentService;
 
 import javax.validation.Valid;
 
-@Slf4j
 @CrossOrigin(value = "http://localhost:3000")
 @RestController
 @RequestMapping("/ads/{id}/comments")
@@ -29,32 +29,33 @@ public class CommentsController {
     @Operation(
             summary = "Добавление комментария к объявлению",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "OK"),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
-                    @ApiResponse(responseCode = "404", description = "Not found")
+                    @ApiResponse(responseCode = "200", description = "OK",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = Comment.class))),
+                    @ApiResponse(responseCode = "401", description = "Не авторизован"),
+                    @ApiResponse(responseCode = "404", description = "Не найдено")
             }
     )
     @PreAuthorize("isAuthenticated()")
-
     public ResponseEntity<Comment> addComment(
             @PathVariable Integer id,
             @RequestBody @Valid CreateOrUpdateComment commentDTO) {
-
         Comment createdComment = commentService.addComment(id, commentDTO);
         return ResponseEntity.ok(createdComment);
     }
 
+    @PutMapping(value = "/{commentId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(
             summary = "Обновление комментария",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "OK"),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden"),
-                    @ApiResponse(responseCode = "404", description = "Not found")
+                    @ApiResponse(responseCode = "200", description = "OK",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = Comment.class))),
+                    @ApiResponse(responseCode = "401", description = "Не авторизован"),
+                    @ApiResponse(responseCode = "403", description = "Запрещено"),
+                    @ApiResponse(responseCode = "404", description = "Не найдено")
             }
     )
     @PreAuthorize("isAuthenticated() and (@commentSecurityService.hasPermissionToUpdate(#commentId))")
-    @PutMapping(value = "/{commentId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Comment> updateComment(
             @PathVariable Integer commentId,
             @RequestBody @Valid CreateOrUpdateComment updateDTO, @PathVariable String id) {
@@ -68,9 +69,9 @@ public class CommentsController {
             summary = "Удаление комментария",
             responses = {
                     @ApiResponse(responseCode = "200", description = "OK"),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden"),
-                    @ApiResponse(responseCode = "404", description = "Not found")
+                    @ApiResponse(responseCode = "401", description = "Не авторизован"),
+                    @ApiResponse(responseCode = "403", description = "Запрещено"),
+                    @ApiResponse(responseCode = "404", description = "Не найдено")
             }
     )
     @PreAuthorize("isAuthenticated() and (@commentSecurityService.hasPermissionToUpdate(#commentId))")
@@ -79,9 +80,17 @@ public class CommentsController {
         return ResponseEntity.ok().build();
     }
 
-
-    @Operation(summary = "Получение комментариев объявления")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(
+            summary = "Получение комментариев объявления",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "OK",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = Comments.class))),
+                    @ApiResponse(responseCode = "401", description = "Не авторизован"),
+                    @ApiResponse(responseCode = "404", description = "Не найдено")
+            }
+    )
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Comments> getComments(@PathVariable Integer id) {
         Comments comments = commentService.getCommentsByAdId(id);

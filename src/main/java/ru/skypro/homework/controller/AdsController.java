@@ -6,14 +6,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-
-import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,17 +17,11 @@ import ru.skypro.homework.dto.Ad;
 import ru.skypro.homework.dto.Ads;
 import ru.skypro.homework.dto.CreateOrUpdateAd;
 import ru.skypro.homework.dto.ExtendedAd;
-import ru.skypro.homework.model.UserEntity;
-import ru.skypro.homework.repository.UserRepository;
 import ru.skypro.homework.service.AdService;
-import ru.skypro.homework.service.UserService;
-import ru.skypro.homework.util.AuthenticationUtils;
 
 import javax.validation.Valid;
-import java.io.IOException;
-import java.util.List;
 
-@Slf4j
+
 @CrossOrigin(value = "http://localhost:3000")
 @RestController
 @RequestMapping("/ads")
@@ -41,42 +31,30 @@ import java.util.List;
 public class AdsController {
 
     private final AdService adService;
-    private final UserRepository userRepository;
 
     @GetMapping
     @Operation(
             summary = "Получение всех объявлений",
             responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "OK",
-                            content = @Content(
-                                    mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema = @Schema(implementation = Ads.class)
-                            )
-                    )
+                    @ApiResponse(responseCode = "200", description = "OK",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = Ads.class)))
             }
     )
     public ResponseEntity<Ads> getAllAds() {
-        Ads ads = adService.getAllAds();
-        return ResponseEntity.ok(ads);
+        return ResponseEntity.ok(adService.getAllAds());
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     @Operation(
             summary = "Создание нового объявления",
             responses = {
-                    @ApiResponse(
-                            responseCode = "201",
-                            description = "Created",
-                            content = @Content(
-                                    mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema = @Schema(implementation = Ad.class)
-                            )
-                    ),
-                    @ApiResponse(responseCode = "400", description = "Bad Request"),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden")
+                    @ApiResponse(responseCode = "201", description = "Создано",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = Ad.class))),
+                    @ApiResponse(responseCode = "400", description = "Неверный запрос"),
+                    @ApiResponse(responseCode = "401", description = "Не авторизован"),
+                    @ApiResponse(responseCode = "403", description = "Запрещено")
             }
     )
     @PreAuthorize("isAuthenticated()")
@@ -89,33 +67,27 @@ public class AdsController {
     @Operation(
             summary = "Получение информации об объявлении",
             responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "OK",
-                            content = @Content(
-                                    mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema = @Schema(implementation = ExtendedAd.class)
-                            )
-                    ),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden"),
-                    @ApiResponse(responseCode = "404", description = "Not found")
+                    @ApiResponse(responseCode = "200", description = "OK",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = ExtendedAd.class))),
+                    @ApiResponse(responseCode = "401", description = "Не авторизован"),
+                    @ApiResponse(responseCode = "403", description = "Запрещено"),
+                    @ApiResponse(responseCode = "404", description = "Не найдено")
             }
     )
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ExtendedAd> getAd(@PathVariable Integer id) {
-        ExtendedAd extendedAd = adService.getExtendedAd(id);
-        return ResponseEntity.ok(extendedAd);
+        return ResponseEntity.ok(adService.getExtendedAd(id));
     }
 
     @DeleteMapping("/{id}")
     @Operation(
             summary = "Удаление объявления",
             responses = {
-                    @ApiResponse(responseCode = "204", description = "No Content"),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden"),
-                    @ApiResponse(responseCode = "404", description = "Not found")
+                    @ApiResponse(responseCode = "204", description = "Нет контента"),
+                    @ApiResponse(responseCode = "401", description = "Не авторизован"),
+                    @ApiResponse(responseCode = "403", description = "Запрещено"),
+                    @ApiResponse(responseCode = "404", description = "Не найдено")
             }
     )
     @PreAuthorize("hasRole('ADMIN') || @adSecurityService.isAuthor(#id)")
@@ -128,26 +100,18 @@ public class AdsController {
     @Operation(
             summary = "Обновление объявления",
             responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "OK",
-                            content = @Content(
-                                    mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema = @Schema(implementation = Integer.class)
-                            )
-                    ),
-                    @ApiResponse(responseCode = "400", description = "Bad Request"),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden"),
-                    @ApiResponse(responseCode = "404", description = "Not found")
+                    @ApiResponse(responseCode = "200", description = "OK",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = Ad.class))),
+                    @ApiResponse(responseCode = "400", description = "Неверный запрос"),
+                    @ApiResponse(responseCode = "401", description = "Не авторизован"),
+                    @ApiResponse(responseCode = "403", description = "Запрещено"),
+                    @ApiResponse(responseCode = "404", description = "Не найдено")
             }
     )
     @PreAuthorize("hasRole('ADMIN') || @adSecurityService.isAuthor(#id)")
-
     public ResponseEntity<Integer> updateAd(@PathVariable Integer id, @Valid @RequestBody CreateOrUpdateAd createOrUpdateAd) {
-
-        Integer updatedAdId = adService.updateAd(id, createOrUpdateAd);
-        return ResponseEntity.ok(updatedAdId);
+        return ResponseEntity.ok(adService.updateAd(id, createOrUpdateAd));
     }
 
 
@@ -155,15 +119,10 @@ public class AdsController {
     @Operation(
             summary = "Получение объявлений авторизованного пользователя",
             responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "OK",
-                            content = @Content(
-                                    mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema = @Schema(implementation = Ads.class)
-                            )
-                    ),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized")
+                    @ApiResponse(responseCode = "200", description = "OK",
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = Ads.class))),
+                    @ApiResponse(responseCode = "401", description = "Не авторизован")
             }
     )
     @PreAuthorize("isAuthenticated()")
@@ -176,28 +135,18 @@ public class AdsController {
     @Operation(
             summary = "Обновление картинки объявления",
             responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "OK",
-                            content = @Content(
-                                    mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE,
-                                    schema = @Schema(type = "array", implementation = Byte.class)
-                            )
-                    ),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden"),
-                    @ApiResponse(responseCode = "404", description = "Not found")
+                    @ApiResponse(responseCode = "200", description = "OK",
+                            content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE,
+                                    schema = @Schema(type = "array", implementation = Byte.class))),
+                    @ApiResponse(responseCode = "401", description = "Не авторизован"),
+                    @ApiResponse(responseCode = "403", description = "Запрещено"),
+                    @ApiResponse(responseCode = "404", description = "Не найдено")
             }
     )
     @PreAuthorize("hasRole('ADMIN') || @adSecurityService.isAuthor(#id)")
-    public ResponseEntity<byte[]> updateImage(
-            @PathVariable Integer id,
-            @RequestParam("image") MultipartFile image) {
-
-        // Обновляем изображение через сервис
+    public ResponseEntity<byte[]> updateImage(@PathVariable Integer id,
+                                              @RequestParam("image") MultipartFile image) {
         byte[] updatedImage = adService.updateAdImage(id, image);
-
-        // Возвращаем изображение как массив байтов
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(updatedImage);

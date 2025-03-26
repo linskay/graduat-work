@@ -46,7 +46,7 @@ class CommentMapperTest {
     void testToDTO() {
         UserEntity user = new UserEntity();
         user.setId(1L);
-        user.setImageUrl("https://avito-for-oleg/avatar.jpg");
+        user.setImage("https://avito-for-oleg/avatar.jpg");
 
         AdEntity ad = new AdEntity();
         ad.setId(1);

@@ -16,8 +16,6 @@ import ru.skypro.homework.service.UserService;
 import ru.skypro.homework.util.AuthenticationUtils;
 import ru.skypro.homework.util.ImageUtils;
 
-import static ru.skypro.homework.exception.ErrorMessages.INVALID_PASSWORD;
-
 @Slf4j
 @Service
 @Transactional
@@ -32,7 +30,7 @@ public class UserServiceImpl implements UserService {
     public void changePassword(NewPassword newPassword) {
         UserEntity userEntity = getCurrentUser();
         if (!userEntity.getPassword().matches(newPassword.getCurrentPassword())) {
-            throw new InvalidPasswordException(INVALID_PASSWORD);
+            throw new InvalidPasswordException("Некорректный пароль");
         }
         userEntity.setPassword(newPassword.getNewPassword());
         userRepository.save(userEntity);
