@@ -35,7 +35,7 @@ public class UserEntity {
     private Role role;
 
     @Column(name = "image_url")
-    private String image = "/images/default-avatar.jpg";
+    private String image;
 
     @JsonIgnore
     private boolean enabled = true;

@@ -14,9 +14,13 @@ import org.springframework.web.multipart.MultipartFile;
 import ru.skypro.homework.dto.NewPassword;
 import ru.skypro.homework.dto.UpdateUser;
 import ru.skypro.homework.dto.User;
+import ru.skypro.homework.exception.AdNotFoundException;
+import ru.skypro.homework.model.AdEntity;
 import ru.skypro.homework.service.UserService;
+import ru.skypro.homework.util.ImageUtils;
 
 import javax.validation.Valid;
+import java.util.Arrays;
 
 @CrossOrigin(value = "http://localhost:3000")
 @RequiredArgsConstructor
@@ -26,6 +30,7 @@ import javax.validation.Valid;
 public class UserController {
 
     private final UserService userService;
+    private final ImageUtils imageUtils;
 
 
     @PostMapping("/set_password")
@@ -79,6 +84,24 @@ public class UserController {
         return ResponseEntity.ok(updatedUser);
     }
 
+
+//    @PatchMapping(value = "/me/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    @Operation(
+//            summary = "Обновление аватара авторизованного пользователя",
+//            responses = {
+//                    @ApiResponse(responseCode = "200", description = "OK"),
+//                    @ApiResponse(responseCode = "401", description = "Не авторизован")
+//            }
+//    )
+//    @PreAuthorize("isAuthenticated()")
+//    public ResponseEntity<String> updateUserImage(
+//            @RequestParam("image") MultipartFile image
+//    ) {
+//        String imageUrl = Arrays.toString(userService.updateUserAvatar(image));
+//
+//        return ResponseEntity.ok().body(imageUrl);
+//    }
+
     @PatchMapping(value = "/me/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "Обновление аватара авторизованного пользователя",
@@ -87,10 +110,10 @@ public class UserController {
                     @ApiResponse(responseCode = "401", description = "Не авторизован")
             }
     )
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<byte[]> updateUserImage(@PathVariable Long id,
-                                                  @RequestParam("image") MultipartFile image) {
-        byte[] updatedImage = userService.updateUserAvatar(id, image);
+    @PreAuthorize("hasRole('ADMIN') || @adSecurityService.isAuthor(#id)")
+    public ResponseEntity<byte[]> updateImage(@PathVariable Long id,
+                                              @RequestParam("image") MultipartFile image) {
+        byte[] updatedImage = userService.updateUserImage(id, image);
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(updatedImage);

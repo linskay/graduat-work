@@ -37,7 +37,7 @@ public interface UserMapper {
     @Mapping(target = "role", constant = "USER")
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "enabled", constant = "true")
-    @Mapping(target = "image", constant = "/src/images/default-avatar.jpg")
+
     UserEntity toUser(Register register);
 
     UpdateUser toUpdateUser(UserEntity userEntity);

@@ -32,7 +32,6 @@ public class CommentServiceImpl implements CommentService {
     private final CommentMapper commentMapper;
     private final AuthenticationUtils authenticationUtils;
 
-
     private UserEntity getCurrentUser() {
         return authenticationUtils.getAuthenticatedUser();
     }

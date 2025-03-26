@@ -25,7 +25,6 @@ public class AdEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id")
-    // @JsonBackReference
     private UserEntity author;
 
     @OneToMany(mappedBy = "adEntity", fetch = FetchType.LAZY, cascade = CascadeType.ALL)

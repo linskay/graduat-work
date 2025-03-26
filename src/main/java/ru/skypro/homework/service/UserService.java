@@ -14,7 +14,11 @@ public interface UserService {
 
     UpdateUser updateUser(UpdateUser updateUser);
 
+ //   byte[] updateUserAvatar(Long id, MultipartFile image);
+
     UserEntity getCurrentUser();
 
-    byte[] updateUserAvatar(Long id, MultipartFile image);
+    byte[] updateUserImage(Long id, MultipartFile image);
+
+    //byte[] updateUserImage(Long id, MultipartFile image);
 }
