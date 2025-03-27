@@ -18,7 +18,7 @@ public interface UserService {
 
     UserEntity getCurrentUser();
 
-    byte[] updateUserImage(Long id, MultipartFile image);
+    String updateUserImage(MultipartFile image);
 
     //byte[] updateUserImage(Long id, MultipartFile image);
 }

@@ -9,7 +9,6 @@ import ru.skypro.homework.dto.NewPassword;
 import ru.skypro.homework.dto.UpdateUser;
 import ru.skypro.homework.dto.User;
 import ru.skypro.homework.exception.InvalidPasswordException;
-import ru.skypro.homework.exception.UserNotFoundException;
 import ru.skypro.homework.mapper.UserMapper;
 import ru.skypro.homework.model.UserEntity;
 import ru.skypro.homework.repository.UserRepository;
@@ -65,13 +64,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public byte[] updateUserImage(Long id, MultipartFile image) {
-        UserEntity adEntity = userRepository.findById(id)
-                .orElseThrow(() ->
-                        new UserNotFoundException(id));
-        String imageUrl = imageUtils.saveImage(image);
-        adEntity.setImage(imageUrl);
-        userRepository.save(adEntity);
-        return imageUtils.getImageAsBytes(imageUrl);
+    public String updateUserImage(MultipartFile file) {
+        UserEntity currentUser = getCurrentUser();
+
+        String relativeImagePath = imageUtils.saveImage(file);
+
+        currentUser.setImage(relativeImagePath);
+        userRepository.save(currentUser);
+
+        return imageUtils.getBaseUrl() + relativeImagePath;
     }
 }

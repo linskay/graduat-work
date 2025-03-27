@@ -1,6 +1,7 @@
 package ru.skypro.homework.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -80,7 +81,6 @@ public class AdServiceImpl implements AdService {
 
     @Override
     public Ads getAdsForCurrentUser() {
-
         UserEntity currentUser = getCurrentUser();
         List<AdEntity> adEntities = adRepository.findByAuthor_Email(currentUser.getEmail());
         List<Ad> ads = adEntities.stream()
@@ -98,6 +98,7 @@ public class AdServiceImpl implements AdService {
         return new Ads(ads.size(), ads);
     }
 
+    @SneakyThrows
     @Override
     public byte[] updateAdImage(Integer id, MultipartFile image) {
         AdEntity adEntity = adRepository.findById(id)

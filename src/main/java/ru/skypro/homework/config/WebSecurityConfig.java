@@ -3,14 +3,15 @@ package ru.skypro.homework.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
-import static org.springframework.security.config.Customizer.withDefaults;
+import javax.sql.DataSource;
 
 @Configuration
 @EnableWebSecurity
@@ -22,8 +23,10 @@ public class WebSecurityConfig {
             "/v3/api-docs/**",
             "/webjars/**",
             "/login",
-            "/register"
+            "/register",
+            "/ads"
     };
+
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -31,30 +34,35 @@ public class WebSecurityConfig {
                 .csrf().disable()
                 .authorizeHttpRequests((authz) -> authz
                         .mvcMatchers(AUTH_WHITELIST).permitAll()
-                        .mvcMatchers("/ads/**", "/users/**", "/images/**").authenticated()
-                        .anyRequest().denyAll()
+                        .anyRequest().authenticated()
                 )
                 .cors()
                 .and()
-                .httpBasic(withDefaults());
-
+                .httpBasic().disable();
         return http.build();
     }
 
     @Bean
-    public UserDetailsService userDetailsService(ru.skypro.homework.repository.UserRepository userRepository) {
-        return email -> userRepository.findByEmail(email)
-                .map(UserDetailsAdapter::new)
-                .orElseThrow(() -> new org.springframework.security.core.userdetails.UsernameNotFoundException("User not found with email: " + email));
+    public JdbcUserDetailsManager jdbcUserDetailsManager(DataSource dataSource, PasswordEncoder passwordEncoder) {
+        JdbcUserDetailsManager manager = new JdbcUserDetailsManager(dataSource);
+
+        manager.setUsersByUsernameQuery("SELECT email, password, enabled FROM users WHERE email = ?");
+        manager.setAuthoritiesByUsernameQuery("SELECT email, authority FROM authorities WHERE email = ?");
+        manager.setCreateAuthoritySql("INSERT INTO authorities (email, authority) VALUES (?, ?)");
+        manager.setCreateUserSql("INSERT INTO users (email, password, enabled, first_name, last_name, phone) VALUES (?, ?, ?, ?, ?, ?)");
+        manager.setDeleteUserSql("DELETE FROM users WHERE email = ?");
+        manager.setUpdateUserSql("UPDATE users SET password = ?, enabled = ? WHERE email = ?");
+        manager.setDeleteUserAuthoritiesSql("DELETE FROM authorities WHERE email = ?");
+        return manager;
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(HttpSecurity http, BCryptPasswordEncoder bCryptPasswordEncoder, UserDetailsService userDetailsService)
-            throws Exception {
-        return http.getSharedObject(AuthenticationManagerBuilder.class)
-                .userDetailsService(userDetailsService)
-                .passwordEncoder(bCryptPasswordEncoder)
-                .and()
-                .build();
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
     }
 }

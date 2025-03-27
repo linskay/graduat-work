@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,15 +15,12 @@ import org.springframework.web.multipart.MultipartFile;
 import ru.skypro.homework.dto.NewPassword;
 import ru.skypro.homework.dto.UpdateUser;
 import ru.skypro.homework.dto.User;
-import ru.skypro.homework.exception.AdNotFoundException;
-import ru.skypro.homework.model.AdEntity;
 import ru.skypro.homework.service.UserService;
 import ru.skypro.homework.util.ImageUtils;
 
 import javax.validation.Valid;
-import java.util.Arrays;
 
-@CrossOrigin(value = "http://localhost:3000")
+@CrossOrigin(origins = "http://localhost:3000")
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/users")
@@ -110,12 +108,12 @@ public class UserController {
                     @ApiResponse(responseCode = "401", description = "Не авторизован")
             }
     )
-    @PreAuthorize("hasRole('ADMIN') || @adSecurityService.isAuthor(#id)")
-    public ResponseEntity<byte[]> updateImage(@PathVariable Long id,
-                                              @RequestParam("image") MultipartFile image) {
-        byte[] updatedImage = userService.updateUserImage(id, image);
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(updatedImage);
+    public ResponseEntity<String> updateUserImage(@RequestParam("image") MultipartFile file) {
+        try {
+            String imageUrl = userService.updateUserImage(file);
+            return ResponseEntity.ok(imageUrl);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update user image");
+        }
     }
 }

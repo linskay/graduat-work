@@ -1,37 +1,41 @@
 package ru.skypro.homework.controller;
 
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
-import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+import ru.skypro.homework.exception.ImageProcessingException;
 import ru.skypro.homework.util.ImageUtils;
 
-import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
-@CrossOrigin(value = "http://localhost:3000")
+@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/image")
 @RequiredArgsConstructor
 public class ImagesController {
-    ImageUtils imageUtils;
 
-    @SneakyThrows
-    @GetMapping("{imagePath}")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<byte[]> image(Object o) throws IOException {
-        return image(null);
-    }
+    private final ImageUtils imageUtils;
 
-    @GetMapping(value = "/{imageName}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    public ResponseEntity<byte[]> getImage(
-            @PathVariable String imageName
-    ) {
-        byte[] imageBytes = imageUtils.getImageAsBytes("/" + imageName);
+    /**
+     * Получение ссылки на изображение.
+     *
+     * @param imageName имя файла изображения
+     * @return полная ссылка на изображение
+     */
+    @GetMapping("/{imageName}")
+    public ResponseEntity<String> getImageUrl(@PathVariable String imageName) {
+        String relativePath = "/images/" + imageName;
 
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(imageBytes);
+        Path filePath = Paths.get(imageUtils.getUploadDirPath(), imageName);
+        if (!Files.exists(filePath)) {
+            throw new ImageProcessingException("Image not found");
+        }
+
+        String fullImageUrl = imageUtils.getBaseUrl() + relativePath;
+        return ResponseEntity.ok(fullImageUrl);
     }
 }

@@ -27,8 +27,8 @@ import javax.validation.Valid;
 @Tag(name = "Аутентификация", description = "Операции для регистрации и авторизации пользователей")
 public class AuthController {
 
-    private final AuthService authService;
     private final AuthenticationManager authenticationManager;
+    private final AuthService authService;
 
     @PostMapping("/login")
     @Operation(
@@ -38,7 +38,7 @@ public class AuthController {
                     @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content())
             }
     )
-    public ResponseEntity<Void> login(@RequestBody @Valid Login login) {
+    public ResponseEntity<?> login(@RequestBody @Valid Login login) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(login.getUsername(), login.getPassword())
         );
