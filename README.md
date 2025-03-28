@@ -56,6 +56,11 @@
 
 ## Разработчики
 
+Команда No PHP - No problems
 - [Алина](https://github.com/linskay)
 - [Варвара](https://github.com/varyansan)
+
+
+![фото](https://github.com/user-attachments/assets/ed69bc90-5f64-4e06-a3c8-5d7b4e3a7838)
+
 
