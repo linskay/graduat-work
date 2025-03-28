@@ -136,19 +136,29 @@ public class AdsController {
             summary = "Обновление картинки объявления",
             responses = {
                     @ApiResponse(responseCode = "200", description = "OK",
-                            content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE,
-                                    schema = @Schema(type = "array", implementation = Byte.class))),
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                                    schema = @Schema(implementation = String.class))),
                     @ApiResponse(responseCode = "401", description = "Не авторизован"),
                     @ApiResponse(responseCode = "403", description = "Запрещено"),
                     @ApiResponse(responseCode = "404", description = "Не найдено")
             }
     )
     @PreAuthorize("hasRole('ADMIN') || @adSecurityService.isAuthor(#id)")
-    public ResponseEntity<byte[]> updateImage(@PathVariable Integer id,
+    public ResponseEntity<String> updateImage(@PathVariable Integer id,
                                               @RequestParam("image") MultipartFile image) {
-        byte[] updatedImage = adService.updateAdImage(id, image);
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(updatedImage);
+        try {
+            // 1. Проверка типа файла
+            if (!image.getContentType().startsWith("image/")) {
+                return ResponseEntity.badRequest().body("Только изображения (JPEG, PNG)");
+            }
+
+            // 2. Обновление изображения через сервис
+            String newImageName = adService.updateAdImage(id, image);
+
+            // 3. Возвращаем только имя файла (фронт сам добавит /images/)
+            return ResponseEntity.ok(newImageName);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Ошибка при обновлении изображения");
+        }
     }
 }

@@ -6,7 +6,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,6 +18,7 @@ import ru.skypro.homework.service.UserService;
 import ru.skypro.homework.util.ImageUtils;
 
 import javax.validation.Valid;
+import java.io.IOException;
 
 @CrossOrigin(origins = "http://localhost:3000")
 @RequiredArgsConstructor
@@ -28,8 +28,6 @@ import javax.validation.Valid;
 public class UserController {
 
     private final UserService userService;
-    private final ImageUtils imageUtils;
-
 
     @PostMapping("/set_password")
     @Operation(
@@ -82,38 +80,11 @@ public class UserController {
         return ResponseEntity.ok(updatedUser);
     }
 
-
-//    @PatchMapping(value = "/me/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-//    @Operation(
-//            summary = "Обновление аватара авторизованного пользователя",
-//            responses = {
-//                    @ApiResponse(responseCode = "200", description = "OK"),
-//                    @ApiResponse(responseCode = "401", description = "Не авторизован")
-//            }
-//    )
-//    @PreAuthorize("isAuthenticated()")
-//    public ResponseEntity<String> updateUserImage(
-//            @RequestParam("image") MultipartFile image
-//    ) {
-//        String imageUrl = Arrays.toString(userService.updateUserAvatar(image));
-//
-//        return ResponseEntity.ok().body(imageUrl);
-//    }
-
     @PatchMapping(value = "/me/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(
-            summary = "Обновление аватара авторизованного пользователя",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "OK"),
-                    @ApiResponse(responseCode = "401", description = "Не авторизован")
-            }
-    )
-    public ResponseEntity<String> updateUserImage(@RequestParam("image") MultipartFile file) {
-        try {
-            String imageUrl = userService.updateUserImage(file);
-            return ResponseEntity.ok(imageUrl);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update user image");
-        }
+    @Operation(summary = "Обновление аватара авторизованного пользователя")
+    public ResponseEntity<String> updateUserImage(@RequestParam("image") MultipartFile file) throws IOException {
+
+        String newFileName = userService.updateUserImage(file);
+        return ResponseEntity.ok(newFileName);
     }
 }

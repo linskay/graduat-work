@@ -16,6 +16,11 @@ import ru.skypro.homework.service.UserService;
 import ru.skypro.homework.util.AuthenticationUtils;
 import ru.skypro.homework.util.ImageUtils;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 @Slf4j
 @Service
 @Transactional
@@ -50,28 +55,24 @@ public class UserServiceImpl implements UserService {
         return userMapper.toUpdateUser(userEntity);
     }
 
-//        @Override
-//        public byte[] updateUserAvatar(Long id, MultipartFile image) {
-//        UserEntity currentUser = getCurrentUser();
-//        String avatarUrl = imageUtils.saveImage(image);
-//        currentUser.setImage(avatarUrl);
-//        userRepository.save(currentUser);
-//        return avatarUrl.getBytes();
-//    }
-
     public UserEntity getCurrentUser() {
         return authenticationUtils.getAuthenticatedUser();
     }
 
     @Override
-    public String updateUserImage(MultipartFile file) {
+    public String updateUserImage(MultipartFile file) throws IOException {
         UserEntity currentUser = getCurrentUser();
 
-        String relativeImagePath = imageUtils.saveImage(file);
+        if (currentUser.getImage() != null) {
+            Path oldImagePath = Paths.get(imageUtils.getUploadDirPath(), currentUser.getImage());
+            Files.deleteIfExists(oldImagePath);
+        }
 
-        currentUser.setImage(relativeImagePath);
+        String newFileName = imageUtils.saveImage(file);
+
+        currentUser.setImage(newFileName);
         userRepository.save(currentUser);
 
-        return imageUtils.getBaseUrl() + relativeImagePath;
+        return newFileName;
     }
 }

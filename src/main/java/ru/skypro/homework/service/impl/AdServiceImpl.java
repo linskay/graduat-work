@@ -20,6 +20,10 @@ import ru.skypro.homework.service.AdService;
 import ru.skypro.homework.util.AuthenticationUtils;
 import ru.skypro.homework.util.ImageUtils;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 @Slf4j
@@ -100,13 +104,24 @@ public class AdServiceImpl implements AdService {
 
     @SneakyThrows
     @Override
-    public byte[] updateAdImage(Integer id, MultipartFile image) {
-        AdEntity adEntity = adRepository.findById(id)
-                .orElseThrow(() ->
-                        new AdNotFoundException(id));
-        String imageUrl = imageUtils.saveImage(image);
-        adEntity.setImage(imageUrl);
-        adRepository.save(adEntity);
-        return imageUtils.getImageAsBytes(imageUrl);
+    public String updateAdImage(Integer adId, MultipartFile image) throws IOException {
+        // 1. Находим объявление
+        AdEntity ad = adRepository.findById(adId)
+                .orElseThrow(() -> new AdNotFoundException(adId));
+
+        // 2. Если было старое изображение - удаляем его
+        if (ad.getImage() != null && !ad.getImage().isEmpty()) {
+            Path oldImagePath = Paths.get(imageUtils.getUploadDirPath(), ad.getImage());
+            Files.deleteIfExists(oldImagePath);
+        }
+
+        // 3. Сохраняем новое изображение
+        String newImageName = imageUtils.saveImage(image);
+
+        // 4. Обновляем запись в БД
+        ad.setImage(newImageName);
+        adRepository.save(ad);
+
+        return newImageName;
     }
 }

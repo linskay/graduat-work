@@ -32,32 +32,15 @@ public class ImageUtils {
      * @param file файл изображения
      * @return относительный URL для доступа к изображению
      */
-    public String saveImage(MultipartFile file) {
-        try {
-            Path uploadDir = Paths.get(uploadDirPath);
-            Files.createDirectories(uploadDir);
+    public String saveImage(MultipartFile file) throws IOException {
+        Path uploadDir = Paths.get(uploadDirPath);
+        Files.createDirectories(uploadDir);
 
-            String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
-            Path filePath = uploadDir.resolve(fileName);
+        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        Path filePath = uploadDir.resolve(fileName);
 
-            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-            return baseUrl + fileName;
-        } catch (IOException e) {
-            throw new ImageProcessingException("Не удалось сохранить изображение", e);
-        }
-    }
+        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-    /**
-     * Читает изображение как массив байтов.
-     *
-     * @param imagePath относительный путь к файлу (начинается с "/")
-     * @return массив байтов
-     */
-    public byte[] getImageAsBytes(String imagePath) throws IOException {
-        Path filePath = Paths.get(uploadDirPath).resolve(imagePath);
-        if (!Files.exists(filePath)) {
-            throw new FileNotFoundException("Изображение не найдено");
-        }
-        return Files.readAllBytes(filePath);
-    }
-}
+        return fileName;
+
+    }}

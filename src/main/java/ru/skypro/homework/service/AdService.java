@@ -5,6 +5,8 @@ import ru.skypro.homework.dto.Ads;
 import ru.skypro.homework.dto.CreateOrUpdateAd;
 import ru.skypro.homework.dto.ExtendedAd;
 
+import java.io.IOException;
+
 public interface AdService {
 
     Integer createAd(CreateOrUpdateAd createOrUpdateAd);
@@ -19,5 +21,5 @@ public interface AdService {
 
     Ads getAllAds();
 
-    byte[] updateAdImage(Integer id, MultipartFile image);
+    String updateAdImage(Integer id, MultipartFile image) throws IOException;
 }

@@ -35,5 +35,5 @@ public class User {
     private String phone;
 
     @Schema(description = "Ссылка на изображение пользователя", example = "https://example.com/image.jpg")
-    private String image;
+    private String image= "default-avatar.jpg";
 }
