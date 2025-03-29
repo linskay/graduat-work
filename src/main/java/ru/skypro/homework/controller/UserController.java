@@ -3,11 +3,13 @@ package ru.skypro.homework.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.extern.slf4j.Slf4j;
+import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ru.skypro.homework.dto.NewPassword;
@@ -15,82 +17,73 @@ import ru.skypro.homework.dto.UpdateUser;
 import ru.skypro.homework.dto.User;
 import ru.skypro.homework.service.UserService;
 
-@Slf4j
-@CrossOrigin(value = "http://localhost:3000")
+import javax.validation.Valid;
+
+@CrossOrigin(origins = "http://localhost:3000")
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/users")
-@Tag(name = "Пользователи", description = "Операции с пользователями")
+@Tag(name = "Пользователи", description = "Эндпоинты для работы с пользователями")
 public class UserController {
 
     private final UserService userService;
-
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
 
     @PostMapping("/set_password")
     @Operation(
             summary = "Обновление пароля",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Пароль обновлен"),
-                    @ApiResponse(responseCode = "401", description = "Неавторизованный доступ"),
-                    @ApiResponse(responseCode = "403", description = "Доступ запрещен")
+                    @ApiResponse(responseCode = "200", description = "OK", content = @Content()),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content()),
+                    @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content())
             }
     )
-    public Long setPassword(@RequestBody NewPassword newPassword) {
-        return userService.updatePassword(newPassword);
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> setPassword(@Valid @RequestBody NewPassword newPassword) {
+        userService.changePassword(newPassword);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/me")
     @Operation(
             summary = "Получение информации об авторизованном пользователе",
             responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "Информация о пользователе",
-                            content = @Content(
-                                    mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema = @Schema(implementation = User.class)
-                            )
+                    @ApiResponse(responseCode = "200", description = "Информация о пользователе", content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = User.class))
                     ),
-                    @ApiResponse(
-                            responseCode = "401",
-                            description = "Неавторизованный доступ"
+                    @ApiResponse(responseCode = "401", description = "Неавторизованный доступ", content = @Content()),
+                    @ApiResponse(responseCode = "404", description = "Пользователь не найден", content = @Content()
                     )
             }
     )
-    public ru.skypro.homework.model.User getUser() {
-        return userService.getCurrentUser();
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<User> getUser() {
+        return ResponseEntity.ok(userService.getUser());
     }
 
     @PatchMapping("/me")
     @Operation(
             summary = "Обновление информации об авторизованном пользователе",
             responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "Информация обновлена",
-                            content = @Content(
-                                    mediaType = MediaType.APPLICATION_JSON_VALUE,
-                                    schema = @Schema(implementation = UpdateUser.class)
-                            )
-                    ),
-                    @ApiResponse(responseCode = "401", description = "Неавторизованный доступ")
+                    @ApiResponse(responseCode = "200", description = "OK",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = UpdateUser.class))),
+                    @ApiResponse(responseCode = "401", description = "Не авторизован"),
+                    @ApiResponse(responseCode = "403", description = "Запрещено"),
+                    @ApiResponse(responseCode = "404", description = "Не найдено")
             }
     )
-    public UpdateUser updateUser(@RequestBody UpdateUser updateUser) {
-        return userService.updateUser(updateUser);
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UpdateUser> updateUser(@Valid @RequestBody UpdateUser updateUser) {
+        UpdateUser updatedUser = userService.updateUser(updateUser);
+        return ResponseEntity.ok(updatedUser);
     }
 
+    @SneakyThrows
     @PatchMapping(value = "/me/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(
-            summary = "Обновление аватара авторизованного пользователя",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "Аватар обновлен"),
-                    @ApiResponse(responseCode = "401", description = "Неавторизованный доступ")
-            }
-    )
-    public void updateUserImage(@RequestParam("image") MultipartFile image) {
-        userService.updateUserImage(image);
+    @Operation(summary = "Обновление аватара авторизованного пользователя")
+    public ResponseEntity<String> updateUserImage(@RequestParam("image") MultipartFile image) {
+        String newFileName = userService.updateUserImage(image);
+        return ResponseEntity.ok(newFileName);
     }
 }

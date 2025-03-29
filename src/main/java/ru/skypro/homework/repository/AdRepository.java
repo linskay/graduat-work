@@ -1,11 +1,16 @@
 package ru.skypro.homework.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import ru.skypro.homework.model.Ad;
-import ru.skypro.homework.model.User;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+import ru.skypro.homework.model.AdEntity;
+import ru.skypro.homework.model.UserEntity;
 
 import java.util.List;
+import java.util.Optional;
 
-public interface AdRepository extends JpaRepository<Ad, Integer> {
-    List<Ad> findByAuthor(User author);
+@Repository
+public interface AdRepository extends JpaRepository<AdEntity, Integer> {
+    List<AdEntity> findByAuthor_Email(String email);
 }
