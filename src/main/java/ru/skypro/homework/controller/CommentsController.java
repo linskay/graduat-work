@@ -44,7 +44,7 @@ public class CommentsController {
         return ResponseEntity.ok(createdComment);
     }
 
-    @PutMapping(value = "/{commentId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PatchMapping(value = "/{commentId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(
             summary = "Обновление комментария",
             responses = {

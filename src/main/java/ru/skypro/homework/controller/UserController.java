@@ -61,7 +61,7 @@ public class UserController {
         return ResponseEntity.ok(userService.getUser());
     }
 
-    @PostMapping("/me")
+    @PatchMapping("/me")
     @Operation(
             summary = "Обновление информации об авторизованном пользователе",
             responses = {
