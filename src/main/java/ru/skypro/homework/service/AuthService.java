@@ -31,6 +31,7 @@ public class AuthService {
 
         UserEntity userEntity = userMapper.toUser(register);
         userEntity.setPassword(passwordEncoder.encode(register.getPassword()));
+        userEntity.setImage("default-avatar.jpg");
 
         userEntity = userRepository.save(userEntity);
 

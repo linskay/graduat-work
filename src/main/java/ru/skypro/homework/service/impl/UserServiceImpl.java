@@ -1,6 +1,7 @@
 package ru.skypro.homework.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,11 +16,6 @@ import ru.skypro.homework.repository.UserRepository;
 import ru.skypro.homework.service.UserService;
 import ru.skypro.homework.util.AuthenticationUtils;
 import ru.skypro.homework.util.ImageUtils;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 @Slf4j
 @Service
@@ -59,14 +55,10 @@ public class UserServiceImpl implements UserService {
         return authenticationUtils.getAuthenticatedUser();
     }
 
+    @SneakyThrows
     @Override
-    public String updateUserImage(MultipartFile file) throws IOException {
+    public String updateUserImage(MultipartFile file) {
         UserEntity currentUser = getCurrentUser();
-
-        if (currentUser.getImage() != null) {
-            Path oldImagePath = Paths.get(imageUtils.getUploadDirPath(), currentUser.getImage());
-            Files.deleteIfExists(oldImagePath);
-        }
 
         String newFileName = imageUtils.saveImage(file);
 

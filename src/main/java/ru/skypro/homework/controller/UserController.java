@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,10 +16,8 @@ import ru.skypro.homework.dto.NewPassword;
 import ru.skypro.homework.dto.UpdateUser;
 import ru.skypro.homework.dto.User;
 import ru.skypro.homework.service.UserService;
-import ru.skypro.homework.util.ImageUtils;
 
 import javax.validation.Valid;
-import java.io.IOException;
 
 @CrossOrigin(origins = "http://localhost:3000")
 @RequiredArgsConstructor
@@ -62,7 +61,7 @@ public class UserController {
         return ResponseEntity.ok(userService.getUser());
     }
 
-    @PatchMapping("/me")
+    @PostMapping("/me")
     @Operation(
             summary = "Обновление информации об авторизованном пользователе",
             responses = {
@@ -80,11 +79,11 @@ public class UserController {
         return ResponseEntity.ok(updatedUser);
     }
 
+    @SneakyThrows
     @PatchMapping(value = "/me/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Обновление аватара авторизованного пользователя")
-    public ResponseEntity<String> updateUserImage(@RequestParam("image") MultipartFile file) throws IOException {
-
-        String newFileName = userService.updateUserImage(file);
+    public ResponseEntity<String> updateUserImage(@RequestParam("image") MultipartFile image) {
+        String newFileName = userService.updateUserImage(image);
         return ResponseEntity.ok(newFileName);
     }
 }

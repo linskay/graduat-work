@@ -19,7 +19,10 @@ import ru.skypro.homework.dto.Login;
 import ru.skypro.homework.dto.Register;
 import ru.skypro.homework.service.AuthService;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import java.util.Collections;
 
 @CrossOrigin(value = "http://localhost:3000")
 @RestController
@@ -38,13 +41,22 @@ public class AuthController {
                     @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content())
             }
     )
-    public ResponseEntity<?> login(@RequestBody @Valid Login login) {
+    public ResponseEntity<?> login(@RequestBody @Valid Login login,
+                                   HttpServletRequest request,
+                                   HttpServletResponse response) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(login.getUsername(), login.getPassword())
         );
+
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        return ResponseEntity.ok().build();
+
+        request.getSession(true);
+
+        return ResponseEntity.ok()
+                .header("Access-Control-Allow-Credentials", "true")
+                .body(Collections.singletonMap("status", "Logged in"));
     }
+
 
     @PostMapping("/register")
     @Operation(

@@ -22,7 +22,7 @@ public interface UserMapper {
     @Mapping(source = "lastName", target = "lastName")
     @Mapping(source = "email", target = "email")
     @Mapping(source = "phone", target = "phone")
-    @Mapping(source = "image", target = "image")
+    @Mapping(target = "image", source = "image", ignore = true)
     UserEntity toUser(User user);
 
     @Mapping(source = "username", target = "email")
@@ -37,7 +37,6 @@ public interface UserMapper {
     @Mapping(target = "role", constant = "USER")
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "enabled", constant = "true")
-
     UserEntity toUser(Register register);
 
     UpdateUser toUpdateUser(UserEntity userEntity);

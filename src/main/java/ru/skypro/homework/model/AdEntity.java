@@ -21,7 +21,7 @@ public class AdEntity {
     private String title;
     private Integer price;
     private String description;
-    private String image;
+    private String image = "/images/default-ad.jpg";
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id")

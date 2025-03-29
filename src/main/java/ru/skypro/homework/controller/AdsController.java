@@ -10,7 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ru.skypro.homework.dto.Ad;
@@ -20,13 +19,12 @@ import ru.skypro.homework.dto.ExtendedAd;
 import ru.skypro.homework.service.AdService;
 
 import javax.validation.Valid;
-
+import java.io.IOException;
 
 @CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/ads")
 @RequiredArgsConstructor
-@Validated
 @Tag(name = "Объявления", description = "Операции с объявлениями")
 public class AdsController {
 
@@ -145,20 +143,8 @@ public class AdsController {
     )
     @PreAuthorize("hasRole('ADMIN') || @adSecurityService.isAuthor(#id)")
     public ResponseEntity<String> updateImage(@PathVariable Integer id,
-                                              @RequestParam("image") MultipartFile image) {
-        try {
-            // 1. Проверка типа файла
-            if (!image.getContentType().startsWith("image/")) {
-                return ResponseEntity.badRequest().body("Только изображения (JPEG, PNG)");
-            }
-
-            // 2. Обновление изображения через сервис
-            String newImageName = adService.updateAdImage(id, image);
-
-            // 3. Возвращаем только имя файла (фронт сам добавит /images/)
-            return ResponseEntity.ok(newImageName);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Ошибка при обновлении изображения");
-        }
+                                              @RequestParam("image") MultipartFile image) throws IOException {
+        String newImageName = adService.updateAdImage(id, image);
+        return ResponseEntity.ok(newImageName);
     }
 }

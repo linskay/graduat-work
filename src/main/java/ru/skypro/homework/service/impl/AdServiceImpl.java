@@ -104,21 +104,13 @@ public class AdServiceImpl implements AdService {
 
     @SneakyThrows
     @Override
-    public String updateAdImage(Integer adId, MultipartFile image) throws IOException {
-        // 1. Находим объявление
+    public String updateAdImage(Integer adId, MultipartFile image) {
+
         AdEntity ad = adRepository.findById(adId)
                 .orElseThrow(() -> new AdNotFoundException(adId));
 
-        // 2. Если было старое изображение - удаляем его
-        if (ad.getImage() != null && !ad.getImage().isEmpty()) {
-            Path oldImagePath = Paths.get(imageUtils.getUploadDirPath(), ad.getImage());
-            Files.deleteIfExists(oldImagePath);
-        }
-
-        // 3. Сохраняем новое изображение
         String newImageName = imageUtils.saveImage(image);
 
-        // 4. Обновляем запись в БД
         ad.setImage(newImageName);
         adRepository.save(ad);
 
